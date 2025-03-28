@@ -20,8 +20,10 @@ public class User {
 
     private String email;
     private String password;
+    private String avatar;
     private String fullName;
     private String phoneNumber;
+    private String citizenId;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
@@ -31,5 +33,5 @@ public class User {
     private List<Article> articles;
 
     @OneToMany(mappedBy = "owner")
-    private List<Booking> bookings;
+    private List<Ticket> tickets;
 }

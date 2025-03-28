@@ -1,26 +1,22 @@
 package com.fourt.RailSkylines.domain;
 
-import java.util.List;
+import java.util.Date;
 
 import jakarta.persistence.Entity;
-
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "stations")
-public class Station {
+@Table(name = "clock_times")
+public class ClockTime {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long stationId;
+    private long clockTimeId;
 
-    private String stationName;
-    private double positon;
+    private Date date;
+    private double hour;
+    private double minute;
 
-    @ManyToMany
-    private List<Route> routes;
 }

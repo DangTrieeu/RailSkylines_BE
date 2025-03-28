@@ -5,24 +5,24 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "seats")
-public class Seat {
+@Table(name = "train_trips")
+public class TrainTrip {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long seatId;
+    private long trainTripId;
 
-    private boolean status;
-    private double price;
+    @OneToOne(mappedBy = "trip")
+    private Train train;
 
-    @OneToOne(mappedBy = "seat")
-    private Ticket ticket;
+    @OneToOne
+    @JoinColumn(name = "route_id")
+    private Route route;
 
-    @ManyToOne()
-    @JoinColumn(name = "carriage_id")
-    private Carriage carriage;
+    @OneToOne
+    @JoinColumn(name = "schedule_id")
+    private Schedule schedule;
 }

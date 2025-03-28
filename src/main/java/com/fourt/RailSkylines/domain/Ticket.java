@@ -12,7 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -22,17 +22,26 @@ public class Ticket {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long ticketId;
 
-    private String ticketStatus;
+    private enum customerObjectEnum {
+        children,
+        student,
+        elderly,
+        adult
+    }
+
     private Date startDay;
+    private String qrCode;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User owner;
 
     @ManyToOne
     @JoinColumn(name = "booking_id")
     private Booking booking;
 
-    @OneToMany(mappedBy = "ticket")
-    private List<Seat> seats;
+    @OneToOne
+    @JoinColumn(name = "seat_id")
+    private Seat seat;
 
-    @ManyToMany
-    @JsonIgnore
-    private List<Promotion> promotions;
 }

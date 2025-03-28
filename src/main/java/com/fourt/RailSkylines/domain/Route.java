@@ -1,6 +1,5 @@
 package com.fourt.RailSkylines.domain;
 
-import java.util.Date;
 import java.util.List;
 
 import jakarta.persistence.Entity;
@@ -10,19 +9,24 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "promotions")
-public class Promotion {
+@Table(name = "routes")
+public class Route {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long promotionId;
-    private String promotionName;
-    private double discount;
-    private Date validity;
+    private long routeId;
+
+    @OneToOne
+    @JoinColumn(name = "origin_station_id")
+    private Station originStation;
 
     @ManyToMany
-    @JoinTable(name = "booking_promotion", joinColumns = @JoinColumn(name = "promotion_id"), inverseJoinColumns = @JoinColumn(name = "booking_id"))
-    private List<Booking> bookings;
+    @JoinTable(name = "route_station", joinColumns = @JoinColumn(name = "route_id"), inverseJoinColumns = @JoinColumn(name = "station_id"))
+    private List<Station> journey;
+
+    @OneToOne(mappedBy = "route")
+    private TrainTrip trainTrip;
 }
