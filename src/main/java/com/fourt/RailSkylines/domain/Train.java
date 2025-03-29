@@ -2,8 +2,12 @@ package com.fourt.RailSkylines.domain;
 
 import java.util.List;
 
+import com.fourt.RailSkylines.util.constant.TrainStatusEnum;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,10 +26,9 @@ public class Train {
 
     private String TrainName;
 
-    private enum trainStatusEnum {
-        active,
-        unactive
-    }
+    // private enum trainStatusEnum {}
+    @Enumerated(EnumType.STRING)
+    private TrainStatusEnum trainStatus;
 
     @OneToOne
     @JoinColumn(name = "train_trip_id")

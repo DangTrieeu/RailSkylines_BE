@@ -1,6 +1,10 @@
 package com.fourt.RailSkylines.domain;
 
+import com.fourt.RailSkylines.util.constant.SeatStatusEnum;
+
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,7 +20,10 @@ public class Seat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long seatId;
 
-    private boolean status;
+    // private boolean status;
+    @Enumerated(EnumType.STRING)
+    private SeatStatusEnum seatStatus;
+
     private double price;
 
     @OneToOne(mappedBy = "seat")

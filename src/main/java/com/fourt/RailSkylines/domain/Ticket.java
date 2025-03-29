@@ -1,16 +1,16 @@
 package com.fourt.RailSkylines.domain;
 
 import java.util.Date;
-import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fourt.RailSkylines.util.constant.CustomerObjectEnum;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -22,12 +22,9 @@ public class Ticket {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long ticketId;
 
-    private enum customerObjectEnum {
-        children,
-        student,
-        elderly,
-        adult
-    }
+    // private enum customerObjectEnum {}
+    @Enumerated(EnumType.STRING)
+    private CustomerObjectEnum customerObject;
 
     private Date startDay;
     private String qrCode;

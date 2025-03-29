@@ -2,8 +2,12 @@ package com.fourt.RailSkylines.domain;
 
 import java.util.List;
 
+import com.fourt.RailSkylines.util.constant.CarriageTypeEnum;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,7 +23,9 @@ public class Carriage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long carriageId;
 
-    private String type;
+    // private String type;
+    @Enumerated(EnumType.STRING)
+    private CarriageTypeEnum carriageType;
 
     @OneToMany(mappedBy = "carriage", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Seat> seats;
