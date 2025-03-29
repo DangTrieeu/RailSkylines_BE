@@ -37,4 +37,44 @@ public class Train {
     @OneToMany(mappedBy = "train", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Carriage> carriages;
 
+    public long getTrainId() {
+        return trainId;
+    }
+
+    public void setTrainId(long trainId) {
+        this.trainId = trainId;
+    }
+
+    public String getTrainName() {
+        return TrainName;
+    }
+
+    public void setTrainName(String trainName) {
+        TrainName = trainName;
+    }
+
+    public TrainStatusEnum getTrainStatus() {
+        return trainStatus;
+    }
+
+    public void setTrainStatus(TrainStatusEnum trainStatus) {
+        this.trainStatus = trainStatus;
+    }
+
+    public TrainTrip getTrip() {
+        return trip;
+    }
+
+    public void setTrip(TrainTrip trip) {
+        this.trip = trip;
+    }
+
+    public List<Carriage> getCarriages() {
+        return carriages;
+    }
+
+    public void setCarriages(List<Carriage> carriages) {
+        this.carriages = carriages;
+    }
+
 }

@@ -33,4 +33,37 @@ public class Carriage {
     @ManyToOne()
     @JoinColumn(name = "train_id")
     private Train train;
+
+    public long getCarriageId() {
+        return carriageId;
+    }
+
+    public void setCarriageId(long carriageId) {
+        this.carriageId = carriageId;
+    }
+
+    public CarriageTypeEnum getCarriageType() {
+        return carriageType;
+    }
+
+    public void setCarriageType(CarriageTypeEnum carriageType) {
+        this.carriageType = carriageType;
+    }
+
+    public List<Seat> getSeats() {
+        return seats;
+    }
+
+    public void setSeats(List<Seat> seats) {
+        this.seats = seats;
+    }
+
+    public Train getTrain() {
+        return train;
+    }
+
+    public void setTrain(Train train) {
+        this.train = train;
+    }
+
 }

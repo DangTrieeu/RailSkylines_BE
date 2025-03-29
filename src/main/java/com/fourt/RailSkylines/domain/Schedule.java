@@ -27,4 +27,36 @@ public class Schedule {
     @OneToOne(mappedBy = "schedule")
     private TrainTrip trainTrip;
 
+    public long getScheduleId() {
+        return scheduleId;
+    }
+
+    public void setScheduleId(long scheduleId) {
+        this.scheduleId = scheduleId;
+    }
+
+    public ClockTime getDeparture() {
+        return departure;
+    }
+
+    public void setDeparture(ClockTime departure) {
+        this.departure = departure;
+    }
+
+    public ClockTime getArrival() {
+        return arrival;
+    }
+
+    public void setArrival(ClockTime arrival) {
+        this.arrival = arrival;
+    }
+
+    public TrainTrip getTrainTrip() {
+        return trainTrip;
+    }
+
+    public void setTrainTrip(TrainTrip trainTrip) {
+        this.trainTrip = trainTrip;
+    }
+
 }

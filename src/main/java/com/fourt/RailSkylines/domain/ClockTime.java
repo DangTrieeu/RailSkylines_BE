@@ -19,4 +19,36 @@ public class ClockTime {
     private double hour;
     private double minute;
 
+    public long getClockTimeId() {
+        return clockTimeId;
+    }
+
+    public void setClockTimeId(long clockTimeId) {
+        this.clockTimeId = clockTimeId;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
+    public double getHour() {
+        return hour;
+    }
+
+    public void setHour(double hour) {
+        this.hour = hour;
+    }
+
+    public double getMinute() {
+        return minute;
+    }
+
+    public void setMinute(double minute) {
+        this.minute = minute;
+    }
+
 }

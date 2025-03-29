@@ -23,4 +23,37 @@ public class Station {
 
     @ManyToMany
     private List<Route> routes;
+
+    public long getStationId() {
+        return stationId;
+    }
+
+    public void setStationId(long stationId) {
+        this.stationId = stationId;
+    }
+
+    public String getStationName() {
+        return stationName;
+    }
+
+    public void setStationName(String stationName) {
+        this.stationName = stationName;
+    }
+
+    public double getPositon() {
+        return positon;
+    }
+
+    public void setPositon(double positon) {
+        this.positon = positon;
+    }
+
+    public List<Route> getRoutes() {
+        return routes;
+    }
+
+    public void setRoutes(List<Route> routes) {
+        this.routes = routes;
+    }
+
 }
