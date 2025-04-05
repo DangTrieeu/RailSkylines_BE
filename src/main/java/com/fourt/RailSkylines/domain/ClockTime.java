@@ -1,6 +1,6 @@
 package com.fourt.RailSkylines.domain;
 
-import java.util.Date;
+import java.time.Instant;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,7 +15,7 @@ public class ClockTime {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long clockTimeId;
 
-    private Date date;
+    private Instant date;
     private double hour;
     private double minute;
 
@@ -27,11 +27,11 @@ public class ClockTime {
         this.clockTimeId = clockTimeId;
     }
 
-    public Date getDate() {
+    public Instant getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(Instant date) {
         this.date = date;
     }
 

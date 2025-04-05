@@ -1,6 +1,6 @@
 package com.fourt.RailSkylines.domain;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 
 import jakarta.persistence.Entity;
@@ -20,7 +20,7 @@ public class Promotion {
     private long promotionId;
     private String promotionName;
     private double discount;
-    private Date validity;
+    private Instant validity;
 
     @ManyToMany
     @JoinTable(name = "booking_promotion", joinColumns = @JoinColumn(name = "promotion_id"), inverseJoinColumns = @JoinColumn(name = "booking_id"))
@@ -50,11 +50,11 @@ public class Promotion {
         this.discount = discount;
     }
 
-    public Date getValidity() {
+    public Instant getValidity() {
         return validity;
     }
 
-    public void setValidity(Date validity) {
+    public void setValidity(Instant validity) {
         this.validity = validity;
     }
 

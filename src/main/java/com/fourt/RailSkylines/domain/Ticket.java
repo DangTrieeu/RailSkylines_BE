@@ -1,6 +1,6 @@
 package com.fourt.RailSkylines.domain;
 
-import java.util.Date;
+import java.time.Instant;
 
 import com.fourt.RailSkylines.util.constant.CustomerObjectEnum;
 
@@ -26,7 +26,7 @@ public class Ticket {
     @Enumerated(EnumType.STRING)
     private CustomerObjectEnum customerObject;
 
-    private Date startDay;
+    private Instant startDay;
     private String qrCode;
 
     @ManyToOne
@@ -57,11 +57,11 @@ public class Ticket {
         this.customerObject = customerObject;
     }
 
-    public Date getStartDay() {
+    public Instant getStartDay() {
         return startDay;
     }
 
-    public void setStartDay(Date startDay) {
+    public void setStartDay(Instant startDay) {
         this.startDay = startDay;
     }
 

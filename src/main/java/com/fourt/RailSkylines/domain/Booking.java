@@ -1,6 +1,6 @@
 package com.fourt.RailSkylines.domain;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -20,7 +20,7 @@ public class Booking {
     private long bookingId;
 
     private String contactInfor;
-    private Date date;
+    private Instant date;
     private String permissionName;
     private String paymentStatus;
 
@@ -46,11 +46,11 @@ public class Booking {
         this.contactInfor = contactInfor;
     }
 
-    public Date getDate() {
+    public Instant getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(Instant date) {
         this.date = date;
     }
 
