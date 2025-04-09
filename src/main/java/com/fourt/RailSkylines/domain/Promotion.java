@@ -11,9 +11,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "promotions")
+@Getter
+@Setter
 public class Promotion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,45 +29,5 @@ public class Promotion {
     @ManyToMany
     @JoinTable(name = "booking_promotion", joinColumns = @JoinColumn(name = "promotion_id"), inverseJoinColumns = @JoinColumn(name = "booking_id"))
     private List<Booking> bookings;
-
-    public long getPromotionId() {
-        return promotionId;
-    }
-
-    public void setPromotionId(long promotionId) {
-        this.promotionId = promotionId;
-    }
-
-    public String getPromotionName() {
-        return promotionName;
-    }
-
-    public void setPromotionName(String promotionName) {
-        this.promotionName = promotionName;
-    }
-
-    public double getDiscount() {
-        return discount;
-    }
-
-    public void setDiscount(double discount) {
-        this.discount = discount;
-    }
-
-    public Instant getValidity() {
-        return validity;
-    }
-
-    public void setValidity(Instant validity) {
-        this.validity = validity;
-    }
-
-    public List<Booking> getBookings() {
-        return bookings;
-    }
-
-    public void setBookings(List<Booking> bookings) {
-        this.bookings = bookings;
-    }
 
 }

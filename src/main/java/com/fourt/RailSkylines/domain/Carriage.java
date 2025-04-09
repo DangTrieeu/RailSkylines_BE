@@ -15,9 +15,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "carriages")
+@Getter
+@Setter
 public class Carriage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,37 +37,5 @@ public class Carriage {
     @ManyToOne()
     @JoinColumn(name = "train_id")
     private Train train;
-
-    public long getCarriageId() {
-        return carriageId;
-    }
-
-    public void setCarriageId(long carriageId) {
-        this.carriageId = carriageId;
-    }
-
-    public CarriageTypeEnum getCarriageType() {
-        return carriageType;
-    }
-
-    public void setCarriageType(CarriageTypeEnum carriageType) {
-        this.carriageType = carriageType;
-    }
-
-    public List<Seat> getSeats() {
-        return seats;
-    }
-
-    public void setSeats(List<Seat> seats) {
-        this.seats = seats;
-    }
-
-    public Train getTrain() {
-        return train;
-    }
-
-    public void setTrain(Train train) {
-        this.train = train;
-    }
 
 }

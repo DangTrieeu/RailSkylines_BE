@@ -7,9 +7,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "articles")
+@Getter
+@Setter
 public class Article {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,37 +25,5 @@ public class Article {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-
-    public long getArticleId() {
-        return articleId;
-    }
-
-    public void setArticleId(long articleId) {
-        this.articleId = articleId;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
 
 }

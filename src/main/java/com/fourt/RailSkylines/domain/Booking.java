@@ -11,9 +11,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "bookings")
+@Getter
+@Setter
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,61 +33,5 @@ public class Booking {
 
     @ManyToMany
     private List<Promotion> promotions;
-
-    public long getBookingId() {
-        return bookingId;
-    }
-
-    public void setBookingId(long bookingId) {
-        this.bookingId = bookingId;
-    }
-
-    public String getContactInfor() {
-        return contactInfor;
-    }
-
-    public void setContactInfor(String contactInfor) {
-        this.contactInfor = contactInfor;
-    }
-
-    public Instant getDate() {
-        return date;
-    }
-
-    public void setDate(Instant date) {
-        this.date = date;
-    }
-
-    public String getPermissionName() {
-        return permissionName;
-    }
-
-    public void setPermissionName(String permissionName) {
-        this.permissionName = permissionName;
-    }
-
-    public String getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(String paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
-
-    public List<Ticket> getTickets() {
-        return tickets;
-    }
-
-    public void setTickets(List<Ticket> tickets) {
-        this.tickets = tickets;
-    }
-
-    public List<Promotion> getPromotions() {
-        return promotions;
-    }
-
-    public void setPromotions(List<Promotion> promotions) {
-        this.promotions = promotions;
-    }
 
 }

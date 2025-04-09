@@ -7,9 +7,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "train_trips")
+@Getter
+@Setter
 public class TrainTrip {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,37 +29,5 @@ public class TrainTrip {
     @OneToOne
     @JoinColumn(name = "schedule_id")
     private Schedule schedule;
-
-    public long getTrainTripId() {
-        return trainTripId;
-    }
-
-    public void setTrainTripId(long trainTripId) {
-        this.trainTripId = trainTripId;
-    }
-
-    public Train getTrain() {
-        return train;
-    }
-
-    public void setTrain(Train train) {
-        this.train = train;
-    }
-
-    public Route getRoute() {
-        return route;
-    }
-
-    public void setRoute(Route route) {
-        this.route = route;
-    }
-
-    public Schedule getSchedule() {
-        return schedule;
-    }
-
-    public void setSchedule(Schedule schedule) {
-        this.schedule = schedule;
-    }
 
 }
