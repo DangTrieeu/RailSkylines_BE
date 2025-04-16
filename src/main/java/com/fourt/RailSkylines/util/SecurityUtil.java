@@ -2,8 +2,6 @@ package com.fourt.RailSkylines.util;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -22,10 +20,10 @@ public class SecurityUtil {
     }
 
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS512;
-    @Value("${hoidanit.jwt.base64-secret}")
+    @Value("${raiskylines.jwt.base64-secret}")
     private String jwtKey;
 
-    @Value("${hoidanit.jwt.token-validity-in-seconds}")
+    @Value("${raiskylines.jwt.token-validity-in-seconds}")
     private long jwtKeyExpiration;
 
     public String createToken(Authentication authentication) {
@@ -37,7 +35,7 @@ JwtClaimsSet claims = JwtClaimsSet.builder()
 .issuedAt(now)
 .expiresAt(validity)
 .subject(authentication.getName())
-.claim("hoidanit", authentication)
+.claim("railskylines", authentication)
 .build();
 JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
 return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader,
