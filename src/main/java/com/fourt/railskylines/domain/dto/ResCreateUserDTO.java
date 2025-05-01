@@ -9,13 +9,13 @@
 // @Getter
 // @Setter
 // public class ResCreateUserDTO {
-//     private long id;
-//     private String name;
-//     private String email;
-//     private int age;
-//     private String address;
-//     private GenderEnum gender;
-//     private Instant createdAt;
-//     private String createdBy;
+// private long id;
+// private String name;
+// private String email;
+// private int age;
+// private String address;
+// private GenderEnum gender;
+// private Instant createdAt;
+// private String createdBy;
 
 // }

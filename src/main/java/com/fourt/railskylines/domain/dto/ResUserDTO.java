@@ -13,12 +13,12 @@
 // @AllArgsConstructor
 // @NoArgsConstructor
 // public class ResUserDTO {
-//     private long id;
-//     private String email;
-//     private String name;
-//     private GenderEnum gender;
-//     private String address;
-//     private int age;
-//     private Instant updatedAt;
-//     private Instant createdAt;
+// private long id;
+// private String email;
+// private String name;
+// private GenderEnum gender;
+// private String address;
+// private int age;
+// private Instant updatedAt;
+// private Instant createdAt;
 // }

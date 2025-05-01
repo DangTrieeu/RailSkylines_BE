@@ -1,6 +1,7 @@
 package com.fourt.railskylines.domain;
 
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
+import com.fourt.railskylines.util.constant.SeatTypeEnum;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,5 +37,8 @@ public class Seat {
     @ManyToOne()
     @JoinColumn(name = "carriage_id")
     private Carriage carriage;
+
+    @Enumerated(EnumType.STRING)
+    private SeatTypeEnum seatType;
 
 }

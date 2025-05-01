@@ -2,12 +2,15 @@ package com.fourt.railskylines.domain;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fourt.railskylines.util.constant.TrainStatusEnum;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,7 +31,7 @@ public class Train {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long trainId;
 
-    private String TrainName;
+    private String trainName;
 
     // private enum trainStatusEnum {}
     @Enumerated(EnumType.STRING)
@@ -38,7 +41,13 @@ public class Train {
     @JoinColumn(name = "train_trip_id")
     private TrainTrip trip;
 
-    @OneToMany(mappedBy = "train", cascade = CascadeType.ALL, orphanRemoval = true)
+    // @OneToMany(mappedBy = "train", cascade = CascadeType.ALL, orphanRemoval =
+    // true)
+    // @JsonManagedReference
+    // private List<Carriage> carriages;
+
+    @OneToMany(mappedBy = "train", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Carriage> carriages;
 
 }
