@@ -41,11 +41,6 @@ public class Train {
     @JoinColumn(name = "train_trip_id")
     private TrainTrip trip;
 
-    // @OneToMany(mappedBy = "train", cascade = CascadeType.ALL, orphanRemoval =
-    // true)
-    // @JsonManagedReference
-    // private List<Carriage> carriages;
-
     @OneToMany(mappedBy = "train", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Carriage> carriages;

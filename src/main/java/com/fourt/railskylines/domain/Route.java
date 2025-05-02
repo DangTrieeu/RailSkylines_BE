@@ -33,5 +33,4 @@ public class Route {
 
     @OneToOne(mappedBy = "route")
     private TrainTrip trainTrip;
-
 }

@@ -21,11 +21,9 @@ public class Station {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long stationId;
-
     private String stationName;
-    private double positon;
+    private double position;
 
     @ManyToMany
     private List<Route> routes;
-
 }

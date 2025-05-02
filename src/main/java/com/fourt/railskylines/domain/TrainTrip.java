@@ -29,5 +29,4 @@ public class TrainTrip {
     @OneToOne
     @JoinColumn(name = "schedule_id")
     private Schedule schedule;
-
 }

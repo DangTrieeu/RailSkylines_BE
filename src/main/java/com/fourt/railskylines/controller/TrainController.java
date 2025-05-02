@@ -1,6 +1,5 @@
 package com.fourt.railskylines.controller;
 
-import com.fourt.railskylines.domain.RestResponse;
 import com.fourt.railskylines.domain.Train;
 import com.fourt.railskylines.domain.dto.ResultPaginationDTO;
 import com.fourt.railskylines.service.TrainService;
