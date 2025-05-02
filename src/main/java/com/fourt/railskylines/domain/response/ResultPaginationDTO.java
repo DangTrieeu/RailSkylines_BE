@@ -1,4 +1,4 @@
-package com.fourt.railskylines.domain.dto;
+package com.fourt.railskylines.domain.response;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,8 +9,8 @@ public class ResultPaginationDTO {
     private Meta meta;
     private Object result;
 
-    @Setter
     @Getter
+    @Setter
     public static class Meta {
         private int page;
         private int pageSize;

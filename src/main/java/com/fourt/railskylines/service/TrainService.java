@@ -1,7 +1,7 @@
 package com.fourt.railskylines.service;
 
 import com.fourt.railskylines.domain.Train;
-import com.fourt.railskylines.domain.dto.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.TrainRepository;
 
 import java.util.Optional;

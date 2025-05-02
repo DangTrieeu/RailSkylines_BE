@@ -2,7 +2,7 @@ package com.fourt.railskylines.service;
 
 import com.fourt.railskylines.domain.Carriage;
 import com.fourt.railskylines.domain.Seat;
-import com.fourt.railskylines.domain.dto.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.CarriageRepository;
 import com.fourt.railskylines.repository.SeatRepository;
 import com.fourt.railskylines.repository.TrainRepository;

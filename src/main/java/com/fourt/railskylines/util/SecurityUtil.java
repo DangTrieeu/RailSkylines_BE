@@ -23,9 +23,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 
+import com.fourt.railskylines.domain.response.ResLoginDTO;
 import com.nimbusds.jose.util.Base64;
-
-import com.fourt.railskylines.domain.dto.RestLoginDTO;
 
 @Service
 public class SecurityUtil {
@@ -47,7 +46,7 @@ public class SecurityUtil {
     @Value("${railskylines.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
-    public String createAccessToken(String email, RestLoginDTO.UserLogin dto) {
+    public String createAccessToken(String email, ResLoginDTO.UserLogin dto) {
         Instant now = Instant.now();
         Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
         // hardcode permission (for testing)
@@ -69,7 +68,7 @@ public class SecurityUtil {
 
     }
 
-    public String createRefreshToken(String email, RestLoginDTO dto) {
+    public String createRefreshToken(String email, ResLoginDTO dto) {
         Instant now = Instant.now();
         Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.SECONDS);
 
@@ -78,7 +77,7 @@ public class SecurityUtil {
             .issuedAt(now)
             .expiresAt(validity)
             .subject(email)
-            .claim("user", dto.getUserLogin())
+            .claim("user", dto.getUser())
             .build();
 
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
