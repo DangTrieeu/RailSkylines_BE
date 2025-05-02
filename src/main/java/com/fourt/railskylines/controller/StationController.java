@@ -1,7 +1,7 @@
 package com.fourt.railskylines.controller;
 
 import com.fourt.railskylines.domain.Station;
-import com.fourt.railskylines.domain.dto.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.service.StationService;
 import com.fourt.railskylines.util.annotation.APIMessage;
 import com.fourt.railskylines.util.error.IdInvalidException;
@@ -39,35 +39,18 @@ public class StationController {
     public ResponseEntity<ResultPaginationDTO> getAllStations(
             @Filter Specification<Station> spec,
             Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(stationService.fetchAllStations(spec, pageable));
+        return ResponseEntity.status(HttpStatus.OK).body(this.stationService.fetchAllStations(spec, pageable));
     }
 
     @GetMapping("/stations/{id}")
     @APIMessage("Fetch station by ID")
     public ResponseEntity<Station> getStationById(@PathVariable("id") Long id) throws IdInvalidException {
-        Station station = stationService.fetchStationById(id);
+        Station station = this.stationService.fetchStationById(id);
         if (station == null) {
             throw new IdInvalidException("Station with id = " + id + " does not exist, please check again");
         }
         return ResponseEntity.ok().body(station);
     }
-
-    // @PutMapping("/stations/{id}")
-    // @APIMessage("Update station by ID")
-    // public ResponseEntity<Station> handleUpdateStation(
-    // @PathVariable("id") Long id,
-    // @Valid @RequestBody Station station) throws IdInvalidException {
-    // boolean isStationExist =
-    // this.stationService.isStationExist(station.getStationName());
-
-    // Station stationDb = stationService.fetchStationById(id);
-    // if (isStationExist) {
-    // throw new IdInvalidException("Station : " + station.getStationName() + " is
-    // exist , pls check again");
-    // }
-    // Station updatedStation = stationService.handleUpdateStation(id, station);
-    // return ResponseEntity.ok(updatedStation);
-    // }
 
     @PutMapping("/stations/{id}")
     @APIMessage("Update station by ID")
@@ -75,7 +58,7 @@ public class StationController {
             @PathVariable("id") Long id,
             @Valid @RequestBody Station station) throws IdInvalidException {
 
-        Station stationDb = stationService.fetchStationById(id);
+        Station stationDb = this.stationService.fetchStationById(id);
 
         // Nếu tên station mới khác với tên cũ, thì kiểm tra trùng
         if (!station.getStationName().equals(stationDb.getStationName())) {
@@ -85,8 +68,7 @@ public class StationController {
                         "Station: " + station.getStationName() + " is already exist, please check again");
             }
         }
-
-        Station updatedStation = stationService.handleUpdateStation(id, station);
+        Station updatedStation = this.stationService.handleUpdateStation(id, station);
         return ResponseEntity.ok(updatedStation);
     }
 

@@ -1,8 +1,7 @@
 package com.fourt.railskylines.service;
 
 import com.fourt.railskylines.domain.Station;
-import com.fourt.railskylines.domain.Train;
-import com.fourt.railskylines.domain.dto.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.StationRepository;
 import com.fourt.railskylines.util.error.IdInvalidException;
 import org.springframework.data.domain.Page;
