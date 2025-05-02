@@ -71,6 +71,7 @@ public class UserService {
     public User handleUpdateUser(long id, User updateUser) {
         User user = this.handleFetchUserById(id);
         if (user != null) {
+            
             user.setFullName(updateUser.getFullName());
             user.setPhoneNumber(updateUser.getPhoneNumber());
             user.setAvatar(updateUser.getAvatar());

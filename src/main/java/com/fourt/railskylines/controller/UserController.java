@@ -46,7 +46,7 @@ public class UserController {
         boolean isEmailExist = this.userService.isEmailExist(newUser.getEmail());
         if (isEmailExist) {
             throw new IdInvalidException(
-                    "Email " + newUser.getEmail() + "already exists, please use another email.");
+                    "Email " + newUser.getEmail() + " already exists, please use another email.");
         }
 
         String hashPassword = this.passwordEncoder.encode(newUser.getPassword());
