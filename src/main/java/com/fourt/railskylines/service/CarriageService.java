@@ -9,6 +9,7 @@ import com.fourt.railskylines.repository.TrainRepository;
 import com.fourt.railskylines.util.constant.CarriageTypeEnum;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.SeatTypeEnum;
+import com.fourt.railskylines.util.error.IdInvalidException;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,56 +35,6 @@ public class CarriageService {
         this.seatRepository = seatRepository;
     }
 
-    // @Transactional
-    // public Carriage handleCreateCarriage(Carriage carriage) {
-    // // Validate train
-    // if (carriage.getTrain() == null || carriage.getTrain().getTrainId() == -1) {
-    // throw new IllegalArgumentException("Train ID must be provided");
-    // }
-
-    // // Check if train exists
-    // Long trainId = carriage.getTrain().getTrainId();
-    // if (!trainRepository.existsById(trainId)) {
-    // throw new IllegalArgumentException("Train with ID " + trainId + " does not
-    // exist");
-    // }
-
-    // // Validate carriage type
-    // if (carriage.getCarriageType() == null) {
-    // throw new IllegalArgumentException("Carriage type must be provided");
-    // }
-
-    // // Validate price
-    // if (carriage.getPrice() <= 0) {
-    // throw new IllegalArgumentException("Carriage price must be greater than
-    // zero");
-    // }
-
-    // // Save carriage to generate ID
-    // Carriage savedCarriage = carriageRepository.save(carriage);
-
-    // // Determine number of seats based on carriage type
-    // int seatCount = switch (carriage.getCarriageType()) {
-    // case sixBeds -> 42;
-    // case fourBeds -> 28;
-    // case seat -> 56;
-    // };
-
-    // // Create seats
-    // List<Seat> seats = new ArrayList<>();
-    // for (int i = 0; i < seatCount; i++) {
-    // Seat seat = new Seat();
-    // seat.setPrice(carriage.getPrice());
-    // seat.setSeatStatus(SeatStatusEnum.available);
-    // seat.setCarriage(savedCarriage);
-    // seats.add(seat);
-    // }
-
-    // // Save all seats
-    // seatRepository.saveAll(seats);
-
-    // return savedCarriage;
-    // }
     @Transactional
     public Carriage handleCreateCarriage(Carriage carriage) {
         // Validate train
@@ -222,4 +173,31 @@ public class CarriageService {
     public void handleDeleteCarriage(long id) {
         this.carriageRepository.deleteById(id);
     }
+
+    public ResultPaginationDTO fetchAllSeatByCarriage(long id, Specification<Seat> spec, Pageable pageable)
+            throws IdInvalidException {
+        if (id <= 0) {
+            throw new IdInvalidException("Carriage ID must be positive");
+        }
+        if (carriageRepository.findById(id).isEmpty()) {
+            throw new IdInvalidException("Carriage with id = " + id + " does not exist");
+        }
+        Specification<Seat> finalSpec = Specification.where(carriageIdEqual(id))
+                .and(spec != null ? spec : Specification.where(null));
+        Page<Seat> pageSeat = this.seatRepository.findAll(finalSpec, pageable);
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
+        mt.setPage(pageable.getPageNumber() + 1);
+        mt.setPageSize(pageable.getPageSize());
+        mt.setPages(pageSeat.getTotalPages());
+        mt.setTotal(pageSeat.getTotalElements());
+        rs.setMeta(mt);
+        rs.setResult(pageSeat.getContent());
+        return rs;
+    }
+
+    private Specification<Seat> carriageIdEqual(long id) {
+        return (root, query, cb) -> cb.equal(root.get("carriage").get("carriageId"), id);
+    }
+
 }

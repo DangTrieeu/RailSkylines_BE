@@ -1,6 +1,7 @@
 package com.fourt.railskylines.controller;
 
 import com.fourt.railskylines.domain.Carriage;
+import com.fourt.railskylines.domain.Seat;
 import com.fourt.railskylines.domain.Train;
 import com.fourt.railskylines.domain.dto.ResultPaginationDTO;
 import com.fourt.railskylines.service.CarriageService;
@@ -10,6 +11,10 @@ import com.fourt.railskylines.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
 
 import jakarta.validation.Valid;
+
+import java.util.List;
+
+import org.hibernate.query.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -34,6 +39,19 @@ public class CarriageController {
     public ResponseEntity<Carriage> createNewCarriage(@Valid @RequestBody Carriage carriage) {
         Carriage savedCarriage = this.carriageService.handleCreateCarriage(carriage);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedCarriage);
+    }
+
+    @GetMapping("/carriages/seat/{id}")
+    @APIMessage("Get seat by carriage id")
+    public ResponseEntity<ResultPaginationDTO> fetchSeatByCarriage(
+            @PathVariable("id") Long id,
+            @Filter Specification<Seat> spec,
+            Pageable pageable) throws IdInvalidException {
+        Carriage carriage = this.carriageService.fetchCarriageById(id);
+        if (carriage == null) {
+            throw new IdInvalidException("Carriage with id = " + id + " does not exist,please check again");
+        }
+        return ResponseEntity.ok(this.carriageService.fetchAllSeatByCarriage(id, spec, pageable));
     }
 
     @GetMapping("/carriages")
@@ -64,7 +82,7 @@ public class CarriageController {
             throw new IdInvalidException("Carriage with id = " + id + " does not exist, please check again");
         }
         Long newTrainId = carriage.getTrain() != null ? carriage.getTrain().getTrainId() : null;
-        if (newTrainId == null || !trainService.existsById(newTrainId)) {
+        if (newTrainId == null || !this.trainService.existsById(newTrainId)) {
             throw new IdInvalidException("Train with id = " + newTrainId + " does not exist, please check again");
         }
         Carriage updatedCarriage = this.carriageService.handleUpdateCarriage(id, carriage);

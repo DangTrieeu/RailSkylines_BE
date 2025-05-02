@@ -5,8 +5,6 @@ import com.fourt.railskylines.domain.dto.ResultPaginationDTO;
 import com.fourt.railskylines.repository.TrainRepository;
 
 import java.util.Optional;
-
-import org.springframework.boot.autoconfigure.batch.BatchProperties.Job;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -60,6 +58,7 @@ public class TrainService {
     }
 
     public void handleDeleteTrain(long id) {
+
         this.trainRepository.deleteById(id);
     }
 
