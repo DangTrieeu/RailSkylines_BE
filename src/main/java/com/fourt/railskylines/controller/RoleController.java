@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fourt.railskylines.domain.Permission;
 import com.fourt.railskylines.domain.Role;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.service.RoleService;
@@ -76,6 +77,16 @@ public class RoleController {
             Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(this.roleService.fetchAllRoles(spec,
                 pageable));
+    }
+
+    @GetMapping("/roles/{id}")
+    @APIMessage("Fetch Role by ID")
+    public ResponseEntity<Role> getStationById(@PathVariable("id") Long id) throws IdInvalidException {
+        Role role = this.roleService.fetchById(id);
+        if (role == null) {
+            throw new IdInvalidException("Role with id = " + id + " does not exist, please check again");
+        }
+        return ResponseEntity.ok().body(role);
     }
 
 }

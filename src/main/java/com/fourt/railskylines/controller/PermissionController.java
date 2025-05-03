@@ -45,23 +45,28 @@ public class PermissionController {
 
     @PutMapping("/permissions/{id}")
     @APIMessage("Update a permission")
-    public ResponseEntity<Permission> update(@PathVariable("id") Long id, @Valid @RequestBody Permission p)
+    public ResponseEntity<Permission> update(@PathVariable("id") Long id, @Valid @RequestBody Permission permission)
             throws IdInvalidException {
         // check exist by id
         if (this.permissionService.fetchById(id) == null) {
             throw new IdInvalidException("Permission với id = " + id + " không tồn tại.");
         }
 
+        // Nếu tên Permission mới khác với tên cũ, thì kiểm tra trùng
+        if (this.permissionService.isPermissionExist(permission)) {
+            throw new IdInvalidException(
+                    "Permission: " + permission.getName() + " is already exist, please check again");
+        }
         // check exist by module, apiPath and method
-        if (this.permissionService.isPermissionExist(p)) {
+        if (this.permissionService.isPermissionExist(permission)) {
             // check name
-            if (this.permissionService.isSameName(p)) {
+            if (this.permissionService.isSameName(permission)) {
                 throw new IdInvalidException("Permission đã tồn tại.");
             }
         }
 
         // update permission
-        Permission updatedPermission = this.permissionService.update(id, p);
+        Permission updatedPermission = this.permissionService.update(id, permission);
         return ResponseEntity.ok().body(updatedPermission);
     }
 
@@ -85,7 +90,7 @@ public class PermissionController {
     }
 
     @GetMapping("/permissions/{id}")
-    @APIMessage("Fetch station by ID")
+    @APIMessage("Fetch Role by ID")
     public ResponseEntity<Permission> getStationById(@PathVariable("id") Long id) throws IdInvalidException {
         Permission permission = this.permissionService.fetchById(id);
         if (permission == null) {

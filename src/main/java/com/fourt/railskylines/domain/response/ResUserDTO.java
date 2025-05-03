@@ -1,11 +1,9 @@
 package com.fourt.railskylines.domain.response;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 
 @Getter
 @Setter
@@ -19,7 +17,7 @@ public class ResUserDTO {
     private String phoneNumber;
     private String avatar;
     private RoleUser role;
-    
+
     @Getter
     @Setter
     @AllArgsConstructor
