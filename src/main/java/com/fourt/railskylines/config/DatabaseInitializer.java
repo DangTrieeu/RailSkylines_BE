@@ -1,151 +1,188 @@
-// package com.fourt.railskylines.config;
+package com.fourt.railskylines.config;
 
-// import java.util.ArrayList;
-// import java.util.List;
-// import org.springframework.boot.CommandLineRunner;
-// import org.springframework.security.crypto.password.PasswordEncoder;
-// import org.springframework.stereotype.Service;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
-// import com.fourt.railskylines.domain.Permission;
-// import com.fourt.railskylines.domain.User;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
-// @Service
-// public class DatabaseInitializer implements CommandLineRunner {
+import com.fourt.railskylines.domain.Permission;
+import com.fourt.railskylines.domain.Role;
+import com.fourt.railskylines.domain.User;
+import com.fourt.railskylines.repository.PermissionRepository;
+import com.fourt.railskylines.repository.RoleRepository;
+import com.fourt.railskylines.repository.UserRepository;
 
-// private final PermissionRepository permissionRepository;
-// private final RoleRepository roleRepository;
-// private final UserRepository userRepository;
-// private final PasswordEncoder passwordEncoder;
+@Service
+public class DatabaseInitializer implements CommandLineRunner {
+    private final PermissionRepository permissionRepository;
+    private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-// public DatabaseInitializer(
-// PermissionRepository permissionRepository,
-// RoleRepository roleRepository,
-// UserRepository userRepository,
-// PasswordEncoder passwordEncoder) {
-// this.permissionRepository = permissionRepository;
-// this.roleRepository = roleRepository;
-// this.userRepository = userRepository;
-// this.passwordEncoder = passwordEncoder;
-// }
+    public DatabaseInitializer(
+            PermissionRepository permissionRepository,
+            RoleRepository roleRepository,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
+        this.permissionRepository = permissionRepository;
+        this.roleRepository = roleRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-// @Override
-// public void run(String... args) throws Exception {
-// System.out.println(">>> START INIT DATABASE");
-// long countPermissions = this.permissionRepository.count();
-// long countRoles = this.roleRepository.count();
-// long countUsers = this.userRepository.count();
+    @Override
+    public void run(String... args) throws Exception {
+        System.out.println(">>> START INIT DATABASE");
+        long countPermissions = this.permissionRepository.count();
+        long countRoles = this.roleRepository.count();
+        long countUsers = this.userRepository.count();
 
-// if (countPermissions == 0) {
-// ArrayList<Permission> arr = new ArrayList<>();
-// arr.add(new Permission("Create a company", "/api/v1/companies", "POST",
-// "COMPANIES"));
-// arr.add(new Permission("Update a company", "/api/v1/companies", "PUT",
-// "COMPANIES"));
-// arr.add(new Permission("Delete a company", "/api/v1/companies/{id}",
-// "DELETE", "COMPANIES"));
-// arr.add(new Permission("Get a company by id", "/api/v1/companies/{id}",
-// "GET", "COMPANIES"));
-// arr.add(new Permission("Get companies with pagination", "/api/v1/companies",
-// "GET", "COMPANIES"));
+        if (countPermissions == 0) {
+            ArrayList<Permission> arr = new ArrayList<>();
 
-// arr.add(new Permission("Create a job", "/api/v1/jobs", "POST", "JOBS"));
-// arr.add(new Permission("Update a job", "/api/v1/jobs", "PUT", "JOBS"));
-// arr.add(new Permission("Delete a job", "/api/v1/jobs/{id}", "DELETE",
-// "JOBS"));
-// arr.add(new Permission("Get a job by id", "/api/v1/jobs/{id}", "GET",
-// "JOBS"));
-// arr.add(new Permission("Get jobs with pagination", "/api/v1/jobs", "GET",
-// "JOBS"));
+            // Article Permissions
+            arr.add(new Permission("Create an article", "/api/v1/articles", "POST", "ARTICLES"));
+            arr.add(new Permission("Update an article", "/api/v1/articles", "PUT", "ARTICLES"));
+            arr.add(new Permission("Delete an article", "/api/v1/articles/{id}", "DELETE", "ARTICLES"));
+            arr.add(new Permission("Get an article by id", "/api/v1/articles/{id}", "GET", "ARTICLES"));
+            arr.add(new Permission("Get articles with pagination", "/api/v1/articles", "GET", "ARTICLES"));
 
-// arr.add(new Permission("Create a permission", "/api/v1/permissions", "POST",
-// "PERMISSIONS"));
-// arr.add(new Permission("Update a permission", "/api/v1/permissions", "PUT",
-// "PERMISSIONS"));
-// arr.add(new Permission("Delete a permission", "/api/v1/permissions/{id}",
-// "DELETE", "PERMISSIONS"));
-// arr.add(new Permission("Get a permission by id", "/api/v1/permissions/{id}",
-// "GET", "PERMISSIONS"));
-// arr.add(new Permission("Get permissions with pagination",
-// "/api/v1/permissions", "GET", "PERMISSIONS"));
+            // Booking Permissions
+            arr.add(new Permission("Create a booking", "/api/v1/bookings", "POST", "BOOKINGS"));
+            arr.add(new Permission("Update a booking", "/api/v1/bookings", "PUT", "BOOKINGS"));
+            arr.add(new Permission("Delete a booking", "/api/v1/bookings/{id}", "DELETE", "BOOKINGS"));
+            arr.add(new Permission("Get a booking by id", "/api/v1/bookings/{id}", "GET", "BOOKINGS"));
+            arr.add(new Permission("Get bookings with pagination", "/api/v1/bookings", "GET", "BOOKINGS"));
 
-// arr.add(new Permission("Create a resume", "/api/v1/resumes", "POST",
-// "RESUMES"));
-// arr.add(new Permission("Update a resume", "/api/v1/resumes", "PUT",
-// "RESUMES"));
-// arr.add(new Permission("Delete a resume", "/api/v1/resumes/{id}", "DELETE",
-// "RESUMES"));
-// arr.add(new Permission("Get a resume by id", "/api/v1/resumes/{id}", "GET",
-// "RESUMES"));
-// arr.add(new Permission("Get resumes with pagination", "/api/v1/resumes",
-// "GET", "RESUMES"));
+            // Carriage Permissions
+            arr.add(new Permission("Create a carriage", "/api/v1/carriages", "POST", "CARRIAGES"));
+            arr.add(new Permission("Update a carriage", "/api/v1/carriages", "PUT", "CARRIAGES"));
+            arr.add(new Permission("Delete a carriage", "/api/v1/carriages/{id}", "DELETE", "CARRIAGES"));
+            arr.add(new Permission("Get a carriage by id", "/api/v1/carriages/{id}", "GET", "CARRIAGES"));
+            arr.add(new Permission("Get carriages with pagination", "/api/v1/carriages", "GET", "CARRIAGES"));
 
-// arr.add(new Permission("Create a role", "/api/v1/roles", "POST", "ROLES"));
-// arr.add(new Permission("Update a role", "/api/v1/roles", "PUT", "ROLES"));
-// arr.add(new Permission("Delete a role", "/api/v1/roles/{id}", "DELETE",
-// "ROLES"));
-// arr.add(new Permission("Get a role by id", "/api/v1/roles/{id}", "GET",
-// "ROLES"));
-// arr.add(new Permission("Get roles with pagination", "/api/v1/roles", "GET",
-// "ROLES"));
+            // ClockTime Permissions
+            arr.add(new Permission("Create a clock time", "/api/v1/clock-times", "POST", "CLOCK_TIMES"));
+            arr.add(new Permission("Update a clock time", "/api/v1/clock-times", "PUT", "CLOCK_TIMES"));
+            arr.add(new Permission("Delete a clock time", "/api/v1/clock-times/{id}", "DELETE", "CLOCK_TIMES"));
+            arr.add(new Permission("Get a clock time by id", "/api/v1/clock-times/{id}", "GET", "CLOCK_TIMES"));
+            arr.add(new Permission("Get clock times with pagination", "/api/v1/clock-times", "GET", "CLOCK_TIMES"));
 
-// arr.add(new Permission("Create a user", "/api/v1/users", "POST", "USERS"));
-// arr.add(new Permission("Update a user", "/api/v1/users", "PUT", "USERS"));
-// arr.add(new Permission("Delete a user", "/api/v1/users/{id}", "DELETE",
-// "USERS"));
-// arr.add(new Permission("Get a user by id", "/api/v1/users/{id}", "GET",
-// "USERS"));
-// arr.add(new Permission("Get users with pagination", "/api/v1/users", "GET",
-// "USERS"));
+            // Permission Permissions
+            arr.add(new Permission("Create a permission", "/api/v1/permissions", "POST", "PERMISSIONS"));
+            arr.add(new Permission("Update a permission", "/api/v1/permissions", "PUT", "PERMISSIONS"));
+            arr.add(new Permission("Delete a permission", "/api/v1/permissions/{id}", "DELETE", "PERMISSIONS"));
+            arr.add(new Permission("Get a permission by id", "/api/v1/permissions/{id}", "GET", "PERMISSIONS"));
+            arr.add(new Permission("Get permissions with pagination", "/api/v1/permissions", "GET", "PERMISSIONS"));
 
-// arr.add(new Permission("Create a subscriber", "/api/v1/subscribers", "POST",
-// "SUBSCRIBERS"));
-// arr.add(new Permission("Update a subscriber", "/api/v1/subscribers", "PUT",
-// "SUBSCRIBERS"));
-// arr.add(new Permission("Delete a subscriber", "/api/v1/subscribers/{id}",
-// "DELETE", "SUBSCRIBERS"));
-// arr.add(new Permission("Get a subscriber by id", "/api/v1/subscribers/{id}",
-// "GET", "SUBSCRIBERS"));
-// arr.add(new Permission("Get subscribers with pagination",
-// "/api/v1/subscribers", "GET", "SUBSCRIBERS"));
+            // Promotion Permissions
+            arr.add(new Permission("Create a promotion", "/api/v1/promotions", "POST", "PROMOTIONS"));
+            arr.add(new Permission("Update a promotion", "/api/v1/promotions", "PUT", "PROMOTIONS"));
+            arr.add(new Permission("Delete a promotion", "/api/v1/promotions/{id}", "DELETE", "PROMOTIONS"));
+            arr.add(new Permission("Get a promotion by id", "/api/v1/promotions/{id}", "GET", "PROMOTIONS"));
+            arr.add(new Permission("Get promotions with pagination", "/api/v1/promotions", "GET", "PROMOTIONS"));
 
-// arr.add(new Permission("Download a file", "/api/v1/files", "POST", "FILES"));
-// arr.add(new Permission("Upload a file", "/api/v1/files", "GET", "FILES"));
+            // Role Permissions
+            arr.add(new Permission("Create a role", "/api/v1/roles", "POST", "ROLES"));
+            arr.add(new Permission("Update a role", "/api/v1/roles", "PUT", "ROLES"));
+            arr.add(new Permission("Delete a role", "/api/v1/roles/{id}", "DELETE", "ROLES"));
+            arr.add(new Permission("Get a role by id", "/api/v1/roles/{id}", "GET", "ROLES"));
+            arr.add(new Permission("Get roles with pagination", "/api/v1/roles", "GET", "ROLES"));
 
-// this.permissionRepository.saveAll(arr);
-// }
+            // Route Permissions
+            arr.add(new Permission("Create a route", "/api/v1/routes", "POST", "ROUTES"));
+            arr.add(new Permission("Update a route", "/api/v1/routes", "PUT", "ROUTES"));
+            arr.add(new Permission("Delete a route", "/api/v1/routes/{id}", "DELETE", "ROUTES"));
+            arr.add(new Permission("Get a route by id", "/api/v1/routes/{id}", "GET", "ROUTES"));
+            arr.add(new Permission("Get routes with pagination", "/api/v1/routes", "GET", "ROUTES"));
 
-// if (countRoles == 0) {
-// List<Permission> allPermissions = this.permissionRepository.findAll();
+            // Schedule Permissions
+            arr.add(new Permission("Create a schedule", "/api/v1/schedules", "POST", "SCHEDULES"));
+            arr.add(new Permission("Update a schedule", "/api/v1/schedules", "PUT", "SCHEDULES"));
+            arr.add(new Permission("Delete a schedule", "/api/v1/schedules/{id}", "DELETE", "SCHEDULES"));
+            arr.add(new Permission("Get a schedule by id", "/api/v1/schedules/{id}", "GET", "SCHEDULES"));
+            arr.add(new Permission("Get schedules with pagination", "/api/v1/schedules", "GET", "SCHEDULES"));
 
-// Role adminRole = new Role();
-// adminRole.setName("SUPER_ADMIN");
-// adminRole.setDescription("Admin thì full permissions");
-// adminRole.setActive(true);
-// adminRole.setPermissions(allPermissions);
+            // Seat Permissions
+            arr.add(new Permission("Create a seat", "/api/v1/seats", "POST", "SEATS"));
+            arr.add(new Permission("Update a seat", "/api/v1/seats", "PUT", "SEATS"));
+            arr.add(new Permission("Delete a seat", "/api/v1/seats/{id}", "DELETE", "SEATS"));
+            arr.add(new Permission("Get a seat by id", "/api/v1/seats/{id}", "GET", "SEATS"));
+            arr.add(new Permission("Get seats with pagination", "/api/v1/seats", "GET", "SEATS"));
 
-// this.roleRepository.save(adminRole);
-// }
+            // Station Permissions
+            arr.add(new Permission("Create a station", "/api/v1/stations", "POST", "STATIONS"));
+            arr.add(new Permission("Update a station", "/api/v1/stations", "PUT", "STATIONS"));
+            arr.add(new Permission("Delete a station", "/api/v1/stations/{id}", "DELETE", "STATIONS"));
+            arr.add(new Permission("Get a station by id", "/api/v1/stations/{id}", "GET", "STATIONS"));
+            arr.add(new Permission("Get stations with pagination", "/api/v1/stations", "GET", "STATIONS"));
 
-// if (countUsers == 0) {
-// User adminUser = new User();
-// adminUser.setEmail("admin@gmail.com");
-// adminUser.setAge(25);
-// adminUser.setGender(GenderEnum.MALE);
-// adminUser.setName("I'm super admin");
-// adminUser.setPassword(this.passwordEncoder.encode("123456"));
+            // Ticket Permissions
+            arr.add(new Permission("Create a ticket", "/api/v1/tickets", "POST", "TICKETS"));
+            arr.add(new Permission("Update a ticket", "/api/v1/tickets", "PUT", "TICKETS"));
+            arr.add(new Permission("Delete a ticket", "/api/v1/tickets/{id}", "DELETE", "TICKETS"));
+            arr.add(new Permission("Get a ticket by id", "/api/v1/tickets/{id}", "GET", "TICKETS"));
+            arr.add(new Permission("Get tickets with pagination", "/api/v1/tickets", "GET", "TICKETS"));
 
-// Role adminRole = this.roleRepository.findByName("SUPER_ADMIN");
-// if (adminRole != null) {
-// adminUser.setRole(adminRole);
-// }
+            // Train Permissions
+            arr.add(new Permission("Create a train", "/api/v1/trains", "POST", "TRAINS"));
+            arr.add(new Permission("Update a train", "/api/v1/trains", "PUT", "TRAINS"));
+            arr.add(new Permission("Delete a train", "/api/v1/trains/{id}", "DELETE", "TRAINS"));
+            arr.add(new Permission("Get a train by id", "/api/v1/trains/{id}", "GET", "TRAINS"));
+            arr.add(new Permission("Get trains with pagination", "/api/v1/trains", "GET", "TRAINS"));
 
-// this.userRepository.save(adminUser);
-// }
+            // TrainTrip Permissions
+            arr.add(new Permission("Create a train trip", "/api/v1/train-trips", "POST", "TRAIN_TRIPS"));
+            arr.add(new Permission("Update a train trip", "/api/v1/train-trips", "PUT", "TRAIN_TRIPS"));
+            arr.add(new Permission("Delete a train trip", "/api/v1/train-trips/{id}", "DELETE", "TRAIN_TRIPS"));
+            arr.add(new Permission("Get a train trip by id", "/api/v1/train-trips/{id}", "GET", "TRAIN_TRIPS"));
+            arr.add(new Permission("Get train trips with pagination", "/api/v1/train-trips", "GET", "TRAIN_TRIPS"));
 
-// if (countPermissions > 0 && countRoles > 0 && countUsers > 0) {
-// System.out.println(">>> SKIP INIT DATABASE ~ ALREADY HAVE DATA...");
-// } else
-// System.out.println(">>> END INIT DATABASE");
-// }
+            // User Permissions
+            arr.add(new Permission("Create a user", "/api/v1/users", "POST", "USERS"));
+            arr.add(new Permission("Update a user", "/api/v1/users", "PUT", "USERS"));
+            arr.add(new Permission("Delete a user", "/api/v1/users/{id}", "DELETE", "USERS"));
+            arr.add(new Permission("Get a user by id", "/api/v1/users/{id}", "GET", "USERS"));
+            arr.add(new Permission("Get users with pagination", "/api/v1/users", "GET", "USERS"));
 
-// }
+            this.permissionRepository.saveAll(arr);
+        }
+
+        if (countRoles == 0) {
+            List<Permission> allPermissions = this.permissionRepository.findAll();
+
+            Role adminRole = new Role();
+            adminRole.setName("SUPER_ADMIN");
+            adminRole.setDescription("Super admin with full permissions");
+            adminRole.setActive(true);
+            adminRole.setPermissions(allPermissions);
+
+            this.roleRepository.save(adminRole);
+        }
+
+        if (countUsers == 0) {
+            User adminUser = new User();
+            adminUser.setEmail("admin@railskylines.com");
+            adminUser.setFullName("Super Admin");
+            adminUser.setPassword(this.passwordEncoder.encode("20102007"));
+            adminUser.setCreatedAt(Instant.now());
+            adminUser.setCreatedBy("system");
+
+            Role adminRole = this.roleRepository.findByName("SUPER_ADMIN");
+            if (adminRole != null) {
+                adminUser.setRole(adminRole);
+            }
+
+            this.userRepository.save(adminUser);
+        }
+
+        if (countPermissions > 0 && countRoles > 0 && countUsers > 0) {
+            System.out.println(">>> SKIP INIT DATABASE ~ ALREADY HAVE DATA...");
+        } else {
+            System.out.println(">>> END INIT DATABASE");
+        }
+    }
+}
