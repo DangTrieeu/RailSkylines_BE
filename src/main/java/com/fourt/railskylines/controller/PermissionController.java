@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import com.fourt.railskylines.domain.Permission;
+import com.fourt.railskylines.domain.Station;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.service.PermissionService;
 import com.fourt.railskylines.util.annotation.APIMessage;
@@ -42,12 +43,13 @@ public class PermissionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(this.permissionService.create(p));
     }
 
-    @PutMapping("/permissions")
+    @PutMapping("/permissions/{id}")
     @APIMessage("Update a permission")
-    public ResponseEntity<Permission> update(@Valid @RequestBody Permission p) throws IdInvalidException {
+    public ResponseEntity<Permission> update(@PathVariable("id") Long id, @Valid @RequestBody Permission p)
+            throws IdInvalidException {
         // check exist by id
-        if (this.permissionService.fetchById(p.getId()) == null) {
-            throw new IdInvalidException("Permission với id = " + p.getId() + " không tồn tại.");
+        if (this.permissionService.fetchById(id) == null) {
+            throw new IdInvalidException("Permission với id = " + id + " không tồn tại.");
         }
 
         // check exist by module, apiPath and method
@@ -59,7 +61,8 @@ public class PermissionController {
         }
 
         // update permission
-        return ResponseEntity.ok().body(this.permissionService.update(p));
+        Permission updatedPermission = this.permissionService.update(id, p);
+        return ResponseEntity.ok().body(updatedPermission);
     }
 
     @DeleteMapping("/permissions/{id}")
@@ -79,5 +82,15 @@ public class PermissionController {
             @Filter Specification<Permission> spec, Pageable pageable) {
 
         return ResponseEntity.ok(this.permissionService.getPermissions(spec, pageable));
+    }
+
+    @GetMapping("/permissions/{id}")
+    @APIMessage("Fetch station by ID")
+    public ResponseEntity<Permission> getStationById(@PathVariable("id") Long id) throws IdInvalidException {
+        Permission permission = this.permissionService.fetchById(id);
+        if (permission == null) {
+            throw new IdInvalidException("Station with id = " + id + " does not exist, please check again");
+        }
+        return ResponseEntity.ok().body(permission);
     }
 }

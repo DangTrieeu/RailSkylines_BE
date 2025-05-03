@@ -29,7 +29,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long userId;
-    
+
     @NotBlank(message = "Email cannot be blank")
     private String email;
 
@@ -50,10 +50,9 @@ public class User {
     private String updatedBy;
 
     @ManyToOne
-    @JoinColumn(name = "role_id", referencedColumnName = "role_id")
+    @JoinColumn(name = "role_id")
     private Role role;
-
-    @OneToMany(mappedBy = "user" , fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Article> articles;
 
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)

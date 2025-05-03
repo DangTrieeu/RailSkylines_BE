@@ -37,8 +37,8 @@ public class PermissionService {
         return this.permissionRepository.save(p);
     }
 
-    public Permission update(Permission p) {
-        Permission permissionDB = this.fetchById(p.getId());
+    public Permission update(long id, Permission p) {
+        Permission permissionDB = this.fetchById(id);
         if (permissionDB != null) {
             permissionDB.setName(p.getName());
             permissionDB.setApiPath(p.getApiPath());
