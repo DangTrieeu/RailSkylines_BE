@@ -15,51 +15,53 @@ package com.fourt.railskylines.config;
 // @Configuration
 // public class OpenAPIConfig {
 
-//     private SecurityScheme createAPIKeyScheme() {
-//         return new SecurityScheme()
-//                 .type(SecurityScheme.Type.HTTP)
-//                 .bearerFormat("JWT")
-//                 .scheme("bearer");
-//     }
+// private SecurityScheme createAPIKeyScheme() {
+// return new SecurityScheme()
+// .type(SecurityScheme.Type.HTTP)
+// .bearerFormat("JWT")
+// .scheme("bearer");
+// }
 
-//     private Server createServer(String url, String description) {
-//         Server server = new Server();
-//         server.setUrl(url);
-//         server.setDescription(description);
-//         return server;
-//     }
+// private Server createServer(String url, String description) {
+// Server server = new Server();
+// server.setUrl(url);
+// server.setDescription(description);
+// return server;
+// }
 
-//     private Contact createContact() {
-//         return new Contact()
-//                 .email("ads.hoidanit@gmail.com")
-//                 .name("Hỏi Dân IT")
-//                 .url("https://hoidanit.vn");
-//     }
+// private Contact createContact() {
+// return new Contact()
+// .email("ads.hoidanit@gmail.com")
+// .name("Hỏi Dân IT")
+// .url("https://hoidanit.vn");
+// }
 
-//     private License createLicense() {
-//         return new License()
-//                 .name("MIT License")
-//                 .url("https://choosealicense.com/licenses/mit/");
-//     }
+// private License createLicense() {
+// return new License()
+// .name("MIT License")
+// .url("https://choosealicense.com/licenses/mit/");
+// }
 
-//     private Info createApiInfo() {
-//         return new Info()
-//                 .title("Job Hunter API")
-//                 .version("1.0")
-//                 .contact(createContact())
-//                 .description("This API exposes all endpoints (job hunter)")
-//                 .termsOfService("https://hoidanit.vn/donate")
-//                 .license(createLicense());
-//     }
+// private Info createApiInfo() {
+// return new Info()
+// .title("Job Hunter API")
+// .version("1.0")
+// .contact(createContact())
+// .description("This API exposes all endpoints (job hunter)")
+// .termsOfService("https://hoidanit.vn/donate")
+// .license(createLicense());
+// }
 
-//     @Bean
-//     public OpenAPI myOpenAPI() {
-//         return new OpenAPI()
-//                 .info(createApiInfo())
-//                 .servers(List.of(
-//                         createServer("http://localhost:8080", "Server URL in Development environment"),
-//                         createServer("https://hoidanit.vn", "Server URL in Production environment")))
-//                 .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
-//                 .components(new Components().addSecuritySchemes("Bearer Authentication", createAPIKeyScheme()));
-//     }
+// @Bean
+// public OpenAPI myOpenAPI() {
+// return new OpenAPI()
+// .info(createApiInfo())
+// .servers(List.of(
+// createServer("http://localhost:8080", "Server URL in Development
+// environment"),
+// createServer("https://hoidanit.vn", "Server URL in Production environment")))
+// .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
+// .components(new Components().addSecuritySchemes("Bearer Authentication",
+// createAPIKeyScheme()));
+// }
 // }

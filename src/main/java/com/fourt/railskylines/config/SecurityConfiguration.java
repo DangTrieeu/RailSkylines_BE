@@ -25,7 +25,6 @@ import com.fourt.railskylines.util.SecurityUtil;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
 
-
 @Configuration
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfiguration {
@@ -51,7 +50,7 @@ public class SecurityConfiguration {
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
-        };  
+        };
 
         http
                 .csrf(c -> c.disable())
@@ -59,11 +58,12 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(
                         authz -> authz
                                 .requestMatchers(whiteList).permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/companies/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/jobs/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/skills/**").permitAll()
-
+                                .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
                                 .anyRequest().authenticated())
+                // .authorizeHttpRequests(authz -> authz
+                // .anyRequest().permitAll())
                 .oauth2ResourceServer((oauth2) -> oauth2.jwt(Customizer.withDefaults())
                         .authenticationEntryPoint(customAuthenticationEntryPoint))
                 // .exceptionHandling(

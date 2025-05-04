@@ -33,7 +33,7 @@ public class Role {
     @Column(name = "role_id")
     private long id;
 
-    @NotBlank(message = "Name is required")
+    @NotBlank(message = "name không được để trống")
     private String name;
 
     private String description;

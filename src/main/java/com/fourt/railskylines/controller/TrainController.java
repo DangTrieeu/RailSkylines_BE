@@ -1,6 +1,5 @@
 package com.fourt.railskylines.controller;
 
-import com.fourt.railskylines.domain.RestResponse;
 import com.fourt.railskylines.domain.Train;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.service.TrainService;
@@ -15,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-// @CrossOrigin(origins = "http://localhost:3000") // Adjust to match your FE
+
 // URL
 @RequestMapping("/api/v1")
 public class TrainController {

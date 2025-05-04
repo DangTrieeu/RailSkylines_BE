@@ -56,14 +56,13 @@ public class UserController {
     }
 
     // fetch user by id
-    @GetMapping("/users/{id}")
+    @GetMapping("/users/{userId}")
     @APIMessage("Fetch user by id")
-    public ResponseEntity<ResUserDTO> getUserById(@PathVariable("id") long id) throws IdInvalidException {
+    public ResponseEntity<ResUserDTO> getUserById(@PathVariable("userId") long id) throws IdInvalidException {
         User fetchUser = this.userService.handleFetchUserById(id);
         if (fetchUser == null) {
             throw new IdInvalidException("User with id = " + id + " does not exist");
         }
-
         return ResponseEntity.status(HttpStatus.OK)
                 .body(this.userService.convertToResUserDTO(fetchUser));
     }
@@ -82,11 +81,12 @@ public class UserController {
     // update user by id
     @PutMapping("/users/{id}")
     @APIMessage("Update user by id")
-    public ResponseEntity<ResUpdateUserDTO> updateUser(@PathVariable("id") long id, @RequestBody User updateUser) throws IdInvalidException {
+    public ResponseEntity<ResUpdateUserDTO> updateUser(@PathVariable("id") long id, @RequestBody User updateUser)
+            throws IdInvalidException {
         if (this.userService.handleFetchUserById(id) == null) {
             throw new IdInvalidException("User with id = " + id + " does not exist");
         }
-        User user = this.userService.handleUpdateUser(id,updateUser);
+        User user = this.userService.handleUpdateUser(id, updateUser);
         return ResponseEntity.ok(this.userService.convertToResUpdateUserDTO(user));
     }
 

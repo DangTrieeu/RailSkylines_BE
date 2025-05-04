@@ -3,6 +3,7 @@ package com.fourt.railskylines.domain;
 import java.time.Instant;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fourt.railskylines.util.SecurityUtil;
 
 import jakarta.persistence.Column;
@@ -29,7 +30,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long userId;
-    
+
     @NotBlank(message = "Email cannot be blank")
     private String email;
 
@@ -52,8 +53,8 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "role_id", referencedColumnName = "role_id")
     private Role role;
-
-    @OneToMany(mappedBy = "user" , fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Article> articles;
 
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)

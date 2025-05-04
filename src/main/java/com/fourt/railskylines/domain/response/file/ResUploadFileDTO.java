@@ -15,4 +15,3 @@ public class ResUploadFileDTO {
     private String fileName;
     private Instant uploadedAt;
 }
-

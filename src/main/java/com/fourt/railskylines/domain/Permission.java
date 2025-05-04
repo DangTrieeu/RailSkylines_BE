@@ -3,6 +3,7 @@ package com.fourt.railskylines.domain;
 import java.time.Instant;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fourt.railskylines.util.SecurityUtil;
 
 import jakarta.persistence.Entity;
@@ -29,16 +30,16 @@ public class Permission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @NotBlank(message = "Name is required")
+    @NotBlank(message = "name không được để trống")
     private String name;
 
-    @NotBlank(message = "apiPath is required")
+    @NotBlank(message = "apiPath không được để trống")
     private String apiPath;
 
-    @NotBlank(message = "Method is required")
+    @NotBlank(message = "method không được để trống")
     private String method;
 
-    @NotBlank(message = "Module is required")
+    @NotBlank(message = "module không được để trống")
     private String module;
 
     private Instant createdAt;
@@ -54,7 +55,7 @@ public class Permission {
     }
 
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "permissions")
-    @JsonIgnore
+    @JsonIgnoreProperties(value = { "permissions" })
     private List<Role> roles;
 
     @PrePersist

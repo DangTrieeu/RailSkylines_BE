@@ -37,14 +37,12 @@ public class Train {
     @Enumerated(EnumType.STRING)
     private TrainStatusEnum trainStatus;
 
-    @OneToOne
-    @JoinColumn(name = "train_trip_id")
-    private TrainTrip trip;
-
-    // @OneToMany(mappedBy = "train", cascade = CascadeType.ALL, orphanRemoval =
-    // true)
-    // @JsonManagedReference
-    // private List<Carriage> carriages;
+    // @OneToOne
+    // @JoinColumn(name = "train_trip_id")
+    // private TrainTrip trip;
+    @OneToMany(mappedBy = "train", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<TrainTrip> trip;
 
     @OneToMany(mappedBy = "train", fetch = FetchType.LAZY)
     @JsonIgnore

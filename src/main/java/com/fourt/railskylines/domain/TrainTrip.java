@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -19,15 +20,15 @@ public class TrainTrip {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long trainTripId;
 
-    @OneToOne(mappedBy = "trip")
+    @ManyToOne
+    @JoinColumn(name = "train_id", nullable = false)
     private Train train;
 
-    @OneToOne
-    @JoinColumn(name = "route_id")
+    @ManyToOne
+    @JoinColumn(name = "route_id", nullable = false)
     private Route route;
 
     @OneToOne
-    @JoinColumn(name = "schedule_id")
+    @JoinColumn(name = "schedule_id", nullable = false)
     private Schedule schedule;
-
 }

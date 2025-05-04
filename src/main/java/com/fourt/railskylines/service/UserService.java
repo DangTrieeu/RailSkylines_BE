@@ -12,6 +12,7 @@ import com.fourt.railskylines.domain.response.ResCreateUserDTO;
 import com.fourt.railskylines.domain.response.ResUpdateUserDTO;
 import com.fourt.railskylines.domain.response.ResUserDTO;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.ResUserDTO.RoleUser;
 import com.fourt.railskylines.repository.UserRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
@@ -71,7 +72,7 @@ public class UserService {
     public User handleUpdateUser(long id, User updateUser) {
         User user = this.handleFetchUserById(id);
         if (user != null) {
-            
+
             user.setFullName(updateUser.getFullName());
             user.setPhoneNumber(updateUser.getPhoneNumber());
             user.setAvatar(updateUser.getAvatar());
@@ -96,6 +97,10 @@ public class UserService {
         res.setCitizenId(user.getCitizenId());
         res.setPhoneNumber(user.getPhoneNumber());
         res.setAvatar(user.getAvatar());
+        if (user.getRole() != null) {
+            RoleUser roleUser = new RoleUser(user.getRole().getId(), user.getRole().getName());
+            res.setRole(roleUser);
+        }
         return res;
     }
 
@@ -139,5 +144,9 @@ public class UserService {
 
     public User getUserByRefreshTokenAndEmail(String token, String email) {
         return this.userRepository.findByRefreshTokenAndEmail(token, email);
+    }
+
+    public User handleGetUserByUsername(String userName) {
+        return this.userRepository.findByEmail(userName);
     }
 }
