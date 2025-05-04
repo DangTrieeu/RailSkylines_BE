@@ -60,6 +60,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(whiteList).permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
                                 .anyRequest().authenticated())
                 // .authorizeHttpRequests(authz -> authz
                 // .anyRequest().permitAll())

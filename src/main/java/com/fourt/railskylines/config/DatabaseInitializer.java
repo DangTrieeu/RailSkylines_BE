@@ -251,6 +251,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             arr.add(new Permission("Delete a carriage", "/api/v1/carriages/{id}", "DELETE", "CARRIAGES"));
             arr.add(new Permission("Get a carriage by id", "/api/v1/carriages/{id}", "GET", "CARRIAGES"));
             arr.add(new Permission("Get carriages with pagination", "/api/v1/carriages", "GET", "CARRIAGES"));
+            arr.add(new Permission("Get seats with carriage id", "/api/v1/carriages/seat/{id}", "GET", "CARRIAGES"));
 
             // ClockTime Permissions
             arr.add(new Permission("Create a clock time", "/api/v1/clock-times", "POST", "CLOCK_TIMES"));
