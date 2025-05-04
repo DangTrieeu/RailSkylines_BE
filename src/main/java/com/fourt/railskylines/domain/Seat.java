@@ -41,4 +41,8 @@ public class Seat {
     @Enumerated(EnumType.STRING)
     private SeatTypeEnum seatType;
 
+    @ManyToOne
+    @JoinColumn(name = "train_trip_id")
+    private TrainTrip trainTrip;
+
 }

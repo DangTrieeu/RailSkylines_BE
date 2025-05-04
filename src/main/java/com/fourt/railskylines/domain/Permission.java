@@ -3,6 +3,7 @@ package com.fourt.railskylines.domain;
 import java.time.Instant;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fourt.railskylines.util.SecurityUtil;
 
 import jakarta.persistence.Entity;
@@ -54,7 +55,7 @@ public class Permission {
     }
 
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "permissions")
-    @JsonIgnore
+    @JsonIgnoreProperties(value = { "permissions" })
     private List<Role> roles;
 
     @PrePersist

@@ -55,16 +55,14 @@ public class SecurityConfiguration {
         http
                 .csrf(c -> c.disable())
                 .cors(Customizer.withDefaults())
-                // .authorizeHttpRequests(
-                // authz -> authz
-                // .requestMatchers(whiteList).permitAll()
-                // .requestMatchers(HttpMethod.GET, "/api/v1/companies/**").permitAll()
-                // .requestMatchers(HttpMethod.GET, "/api/v1/jobs/**").permitAll()
-                // .requestMatchers(HttpMethod.GET, "/api/v1/skills/**").permitAll()
-
-                // .anyRequest().authenticated())
-                .authorizeHttpRequests(authz -> authz
-                        .anyRequest().permitAll())
+                .authorizeHttpRequests(
+                        authz -> authz
+                                .requestMatchers(whiteList).permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
+                                .anyRequest().authenticated())
+                // .authorizeHttpRequests(authz -> authz
+                // .anyRequest().permitAll())
                 .oauth2ResourceServer((oauth2) -> oauth2.jwt(Customizer.withDefaults())
                         .authenticationEntryPoint(customAuthenticationEntryPoint))
                 // .exceptionHandling(

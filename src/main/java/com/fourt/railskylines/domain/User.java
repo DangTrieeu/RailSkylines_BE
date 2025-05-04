@@ -3,6 +3,7 @@ package com.fourt.railskylines.domain;
 import java.time.Instant;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fourt.railskylines.util.SecurityUtil;
 
 import jakarta.persistence.Column;
@@ -53,6 +54,7 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Article> articles;
 
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)

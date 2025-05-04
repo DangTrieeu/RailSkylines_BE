@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-// @CrossOrigin(origins = "http://localhost:3000") // Adjust to match your FE
+
 // URL
 @RequestMapping("/api/v1")
 public class TrainController {
