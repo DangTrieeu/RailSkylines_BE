@@ -21,6 +21,7 @@ public class Article {
 
     private String title;
     private String content;
+    private String thumbnail;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
