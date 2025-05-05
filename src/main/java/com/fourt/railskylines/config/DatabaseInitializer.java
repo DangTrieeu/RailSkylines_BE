@@ -328,6 +328,8 @@ public class DatabaseInitializer implements CommandLineRunner {
             arr.add(new Permission("Update a train trip", "/api/v1/train-trips/{id}", "PUT", "TRAIN_TRIPS")); // Đã sửa
             arr.add(new Permission("Delete a train trip", "/api/v1/train-trips/{id}", "DELETE", "TRAIN_TRIPS"));
             arr.add(new Permission("Get a train trip by id", "/api/v1/train-trips/{id}", "GET", "TRAIN_TRIPS"));
+            arr.add(new Permission("Get carriages by train trip by id", "/api/v1/train-trips/{id}/carriages", "GET",
+                    "TRAIN_TRIPS"));
             arr.add(new Permission("Get train trips with pagination", "/api/v1/train-trips", "GET", "TRAIN_TRIPS"));
 
             // User Permissions

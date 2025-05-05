@@ -33,5 +33,4 @@ public class Booking {
 
     @ManyToMany
     private List<Promotion> promotions;
-
 }

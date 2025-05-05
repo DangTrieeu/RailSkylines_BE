@@ -1,9 +1,13 @@
 package com.fourt.railskylines.service;
 
+import com.fourt.railskylines.domain.Carriage;
 import com.fourt.railskylines.domain.Train;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
+import com.fourt.railskylines.repository.CarriageRepository;
 import com.fourt.railskylines.repository.TrainRepository;
+import com.fourt.railskylines.util.error.IdInvalidException;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,10 +16,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class TrainService {
+
+    private final CarriageRepository carriageRepository;
     private final TrainRepository trainRepository;
 
-    public TrainService(TrainRepository trainRepository) {
+    public TrainService(TrainRepository trainRepository, CarriageRepository carriageRepository) {
         this.trainRepository = trainRepository;
+        this.carriageRepository = carriageRepository;
     }
 
     public Train handleCreateTrain(Train train) {
@@ -68,5 +75,12 @@ public class TrainService {
 
     public boolean existsById(long id) {
         return this.trainRepository.existsById(id);
+    }
+
+    public List<Carriage> fetchCarriagesByTrainId(long trainId) throws IdInvalidException {
+        if (!trainRepository.existsById(trainId)) {
+            throw new IdInvalidException("Train with ID " + trainId + " does not exist");
+        }
+        return this.carriageRepository.findByTrainTrainId(trainId);
     }
 }

@@ -1,5 +1,7 @@
 package com.fourt.railskylines.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,6 +31,8 @@ public class TrainTrip {
     private Route route;
 
     @OneToOne
+    @JsonIgnore
     @JoinColumn(name = "schedule_id", nullable = false)
     private Schedule schedule;
+
 }
