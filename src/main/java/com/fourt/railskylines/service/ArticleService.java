@@ -9,7 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.fourt.railskylines.domain.Article;
-import com.fourt.railskylines.domain.Train;
+
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.ArticleRepository;
 
@@ -50,18 +50,19 @@ public class ArticleService {
         return null;
     }
 
-    public Article handleUpdateTrain(Long id, Article article) {
+    public Article handleUpdateArticle(Long id, Article article) {
         Article tmpArticle = this.fetchArticleById(id);
         if (tmpArticle != null) {
             tmpArticle.setTitle(article.getTitle());
             tmpArticle.setContent(article.getContent());
+            tmpArticle.setThumbnail(article.getThumbnail());
 
             this.articleRepository.save(tmpArticle);
         }
         return tmpArticle;
     }
 
-    public void handleDeleteTrain(Long id) {
+    public void handleDeleteArticle(Long id) {
         this.articleRepository.deleteById(id);
     }
 }

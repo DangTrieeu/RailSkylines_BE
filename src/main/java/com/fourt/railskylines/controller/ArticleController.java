@@ -4,7 +4,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fourt.railskylines.domain.Article;
-import com.fourt.railskylines.domain.Train;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.service.ArticleService;
 import com.fourt.railskylines.util.annotation.APIMessage;
@@ -49,7 +48,7 @@ public class ArticleController {
         if (this.articleService.fetchArticleById(id) == null) {
             throw new IdInvalidException("Article with id = not exits " + id + " , pls check again");
         }
-        Article updateArticle = this.articleService.handleUpdateTrain(id, article);
+        Article updateArticle = this.articleService.handleUpdateArticle(id, article);
         return ResponseEntity.ok(updateArticle);
     }
 
@@ -60,7 +59,7 @@ public class ArticleController {
         if (this.articleService.fetchArticleById(id) == null) {
             throw new IdInvalidException("Article with id = not exits " + id + " , pls check again");
         }
-        this.articleService.handleDeleteTrain(id);
+        this.articleService.handleDeleteArticle(id);
         return ResponseEntity.ok("Delete Success");
     }
 
