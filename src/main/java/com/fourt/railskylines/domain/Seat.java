@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,10 +24,11 @@ import lombok.Setter;
 public class Seat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long seatId;
 
-    // private boolean status;
     @Enumerated(EnumType.STRING)
+    @Column(name = "seat_status")
     private SeatStatusEnum seatStatus;
 
     private double price;
@@ -34,15 +36,15 @@ public class Seat {
     @OneToOne(mappedBy = "seat")
     private Ticket ticket;
 
-    @ManyToOne()
+    @ManyToOne
     @JoinColumn(name = "carriage_id")
     private Carriage carriage;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "seat_type")
     private SeatTypeEnum seatType;
 
     @ManyToOne
     @JoinColumn(name = "train_trip_id")
     private TrainTrip trainTrip;
-
 }

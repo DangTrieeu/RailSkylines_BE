@@ -34,7 +34,9 @@ dependencies {
 	runtimeOnly("com.mysql:mysql-connector-j")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")
-
+	// HTTP Client (tùy chọn cho VNPay)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+	implementation("org.slf4j:slf4j-api:2.0.13")
 }
 
 tasks.withType<Test> {
