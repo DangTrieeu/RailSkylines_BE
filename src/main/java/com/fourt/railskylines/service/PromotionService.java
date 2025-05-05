@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 public class PromotionService {
     private final PromotionRepository promotionRepository;
 
-    @Autowired
     public PromotionService(PromotionRepository promotionRepository) {
         this.promotionRepository = promotionRepository;
     }
@@ -64,6 +63,7 @@ public class PromotionService {
                 ? PromotionStatusEnum.active
                 : PromotionStatusEnum.inactive);
         promotion = promotionRepository.save(promotion);
+        updateAllPromotionStatuses();
         return mapToDTO(promotion);
     }
 
@@ -123,6 +123,9 @@ public class PromotionService {
                             : PromotionStatusEnum.inactive);
         }
         promotion = promotionRepository.save(promotion);
+        if (promotionDTO.getStartDate() != null || promotionDTO.getValidity() != null) {
+            updateAllPromotionStatuses(); // Cập nhật ngay nếu startDate hoặc validity thay đổi
+        }
         return mapToDTO(promotion);
     }
 
@@ -144,7 +147,7 @@ public class PromotionService {
         return mapToDTO(promotion);
     }
 
-    @Scheduled(cron = "0 0 * * * ?")
+    @Scheduled(cron = "0 * * * * ?")
     public void updateAllPromotionStatuses() {
         Instant now = Instant.now();
         List<Promotion> promotions = promotionRepository.findAll();
