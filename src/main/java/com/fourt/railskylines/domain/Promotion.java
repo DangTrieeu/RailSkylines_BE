@@ -26,20 +26,17 @@ import lombok.Setter;
 public class Promotion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "promotion_id")
     private long promotionId;
 
-    @Column(name = "promotion_code")
     private String promotionCode;
-
-    @Column(name = "promotion_description")
     private String promotionDescription;
-
-    @Column(name = "promotion_name")
     private String promotionName;
 
     @Column(nullable = false)
     private double discount;
+
+    @Column(nullable = false)
+    private Instant startDate;
 
     @Column(nullable = false)
     private Instant validity;
@@ -48,6 +45,9 @@ public class Promotion {
     @Enumerated(EnumType.STRING)
     private PromotionStatusEnum status; 
 
-    @ManyToMany(mappedBy = "promotions")
+    @ManyToMany
+    @JoinTable(name = "booking_promotion",
+               joinColumns = @JoinColumn(name = "promotion_id"),
+               inverseJoinColumns = @JoinColumn(name = "booking_id"))
     private List<Booking> bookings;
 }
