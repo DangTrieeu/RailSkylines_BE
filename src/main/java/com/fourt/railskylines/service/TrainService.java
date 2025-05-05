@@ -7,6 +7,8 @@ import com.fourt.railskylines.repository.CarriageRepository;
 import com.fourt.railskylines.repository.TrainRepository;
 import com.fourt.railskylines.util.error.IdInvalidException;
 
+import jakarta.transaction.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -64,8 +66,10 @@ public class TrainService {
         return currentTrain;
     }
 
+    @Transactional
     public void handleDeleteTrain(long id) {
-
+        this.carriageRepository.deleteByTrain_TrainId(id);
+        // Then delete the train
         this.trainRepository.deleteById(id);
     }
 

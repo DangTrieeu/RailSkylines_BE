@@ -170,7 +170,9 @@ public class CarriageService {
         return currentCarriage;
     }
 
+    @Transactional
     public void handleDeleteCarriage(long id) {
+        this.seatRepository.deleteByCarriageCarriageId(id); // Updated method call(id);
         this.carriageRepository.deleteById(id);
     }
 

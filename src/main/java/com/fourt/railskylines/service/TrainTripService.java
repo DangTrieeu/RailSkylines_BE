@@ -471,6 +471,7 @@ public class TrainTripService {
         return trainTripRepository.save(existingTrainTrip);
     }
 
+    @Transactional
     public void handleDeleteTrainTrip(Long id) throws IdInvalidException {
         if (!trainTripRepository.existsById(id)) {
             throw new IdInvalidException("TrainTrip with ID " + id + " does not exist");
