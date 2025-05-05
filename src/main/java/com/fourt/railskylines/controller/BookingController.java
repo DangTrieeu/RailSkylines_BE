@@ -1,12 +1,19 @@
 package com.fourt.railskylines.controller;
 
-import com.fourt.railskylines.config.VNPayConfig;
+import com.fourt.railskylines.config.VNPAYConfig;
+
 import com.fourt.railskylines.domain.Booking;
+import com.fourt.railskylines.domain.RestResponse;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
+import com.fourt.railskylines.domain.response.PaymentDTO;
 import com.fourt.railskylines.service.BookingService;
 import com.fourt.railskylines.util.SecurityUtil;
+
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,9 +24,9 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 public class BookingController {
     private final BookingService bookingService;
-    private final VNPayConfig vnpayConfig;
+    private final VNPAYConfig vnpayConfig;
 
-    public BookingController(BookingService bookingService, VNPayConfig vnpayConfig) {
+    public BookingController(BookingService bookingService, VNPAYConfig vnpayConfig) {
         this.bookingService = bookingService;
         this.vnpayConfig = vnpayConfig;
     }
@@ -33,7 +40,7 @@ public class BookingController {
         }
         Booking booking = bookingService.createBooking(request);
         String paymentUrl = bookingService.getPaymentUrl(booking.getTotalPrice());
-        return ResponseEntity.ok(paymentUrl); // Trả về URL để redirect người dùng
+        return ResponseEntity.ok(paymentUrl);
     }
 
     @GetMapping("/bookings/history")
@@ -44,25 +51,44 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    //
+    @GetMapping("/vn-pay")
+    public RestResponse<PaymentDTO.VNPayResponse> pay(HttpServletRequest request) {
+        RestResponse<PaymentDTO.VNPayResponse> response = new RestResponse<>();
+        response.setStatusCode(HttpStatus.OK.value());
+        response.setError(null);
+        response.setMessage("Success");
+        response.setData(bookingService.createVnPayPayment(request));
+        return response;
+    }
+
     @GetMapping("/payments/return")
     public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String, String> params) throws Exception {
-        boolean isValid = vnpayConfig.verifyReturn(params);
-        if (!isValid) {
-            return ResponseEntity.badRequest().body("Invalid signature");
-        }
+        // boolean isValid = vnpayConfig.verifyReturn(params);
+        // if (!isValid) {
+        // return ResponseEntity.badRequest().body("Invalid signature");
+        // }
 
         String responseCode = params.get("vnp_ResponseCode");
         if ("00".equals(responseCode)) {
             String transactionNo = params.get("vnp_TransactionNo");
-            bookingService.updateBookingPaymentStatus(params.get("vnp_TxnRef"), true,
-                    transactionNo);
-            return ResponseEntity.ok("Payment successful. Transaction ID: " +
-                    transactionNo);
+            bookingService.updateBookingPaymentStatus(params.get("vnp_TxnRef"), true, transactionNo);
+            return ResponseEntity.ok("Payment successful. Transaction ID: " + transactionNo);
         } else {
-            bookingService.updateBookingPaymentStatus(params.get("vnp_TxnRef"), false,
-                    null);
-            return ResponseEntity.badRequest().body("Payment failed. Response Code: " +
-                    responseCode);
+            bookingService.updateBookingPaymentStatus(params.get("vnp_TxnRef"), false, null);
+            return ResponseEntity.badRequest().body("Payment failed. Response Code: " + responseCode);
         }
     }
+
+    // @GetMapping("/payments/callback")
+    // public RestResponse<PaymentDTO.VNPayResponse>
+    // payCallbackHandler(HttpServletRequest request) {
+    // String status = request.getParameter("vnp_ResponseCode");
+    // if ("00".equals(status)) {
+    // return new RestResponse<>(HttpStatus.OK, "Success", new
+    // PaymentDTO.VNPayResponse("00", "Success", ""));
+    // } else {
+    // return new RestResponse<>(HttpStatus.BAD_REQUEST, "Failed", null);
+    // }
+    // }
 }

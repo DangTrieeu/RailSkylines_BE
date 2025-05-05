@@ -1,24 +1,30 @@
 package com.fourt.railskylines.service;
 
+import com.fourt.railskylines.config.VNPAYConfig;
 import com.fourt.railskylines.domain.*;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.domain.request.TicketRequestDTO;
+import com.fourt.railskylines.domain.response.PaymentDTO;
 import com.fourt.railskylines.domain.response.PaymentResponse;
 import com.fourt.railskylines.integration.PaymentGateway;
 import com.fourt.railskylines.repository.*;
+import com.fourt.railskylines.util.VNPayUtil;
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.TicketStatusEnum;
-import jakarta.mail.MessagingException;
+
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -31,12 +37,13 @@ public class BookingService {
     private final UserRepository userRepository;
     private final PaymentGateway paymentGateway;
     private final NotificationService notificationService;
+    private final VNPAYConfig vnPayConfig;
+    private final VNPayUtil vnPayUtil;
 
-    @Autowired
     public BookingService(SeatRepository seatRepository, BookingRepository bookingRepository,
             TicketRepository ticketRepository, PromotionRepository promotionRepository,
             UserRepository userRepository, PaymentGateway paymentGateway,
-            NotificationService notificationService) {
+            NotificationService notificationService, VNPAYConfig vnPayConfig, VNPayUtil vnPayUtil) {
         this.seatRepository = seatRepository;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
@@ -44,6 +51,8 @@ public class BookingService {
         this.userRepository = userRepository;
         this.paymentGateway = paymentGateway;
         this.notificationService = notificationService;
+        this.vnPayConfig = vnPayConfig;
+        this.vnPayUtil = vnPayUtil;
     }
 
     @Transactional
@@ -163,4 +172,44 @@ public class BookingService {
         }
         return bookingRepository.findByUser(user);
     }
+
+    public PaymentDTO.VNPayResponse createVnPayPayment(HttpServletRequest request) {
+        long amount = Integer.parseInt(request.getParameter("amount")) * 100L;
+        String bankCode = request.getParameter("bankCode");
+        Map<String, String> vnpParamsMap = vnPayConfig.getVNPayConfig();
+        vnpParamsMap.put("vnp_Amount", String.valueOf(amount));
+        if (bankCode != null && !bankCode.isEmpty()) {
+            vnpParamsMap.put("vnp_BankCode", bankCode);
+        }
+        vnpParamsMap.put("vnp_IpAddr", VNPayUtil.getIpAddress(request));
+        // build query url
+        String queryUrl = VNPayUtil.getPaymentURL(vnpParamsMap, true);
+        String hashData = VNPayUtil.getPaymentURL(vnpParamsMap, false);
+        String vnpSecureHash = VNPayUtil.hmacSHA512(vnPayConfig.getSecretKey(), hashData);
+        queryUrl += "&vnp_SecureHash=" + vnpSecureHash;
+        String paymentUrl = vnPayConfig.getVnp_PayUrl() + "?" + queryUrl;
+        return PaymentDTO.VNPayResponse.builder()
+                .code("ok")
+                .message("success")
+                .paymentUrl(paymentUrl).build();
+    }
+    // public boolean verifyReturn(Map<String, String> params) throws Exception {
+    // String vnpSecureHash = params.get("vnp_SecureHash");
+    // params.remove("vnp_SecureHash");
+
+    // List<String> fieldNames = new ArrayList<>(params.keySet());
+    // Collections.sort(fieldNames);
+
+    // StringBuilder hashData = new StringBuilder();
+    // for (String fieldName : fieldNames) {
+    // String fieldValue = params.get(fieldName);
+    // if (fieldValue != null && !fieldValue.isEmpty()) {
+    // hashData.append(fieldName).append("=").append(fieldValue).append("&");
+    // }
+    // }
+
+    // String calculatedHash = hmacSHA512(vnPayUtil., hashData.substring(0,
+    // hashData.length() - 1));
+    // return calculatedHash.equals(vnpSecureHash);
+    // }
 }
