@@ -110,4 +110,4 @@ public class SeatService {
     public void handleDeleteSeat(Long id) {
         seatRepository.deleteById(id);
     }
-}
+}   

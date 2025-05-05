@@ -3,6 +3,7 @@ package com.fourt.railskylines.repository;
 import com.fourt.railskylines.domain.Carriage;
 import com.fourt.railskylines.domain.Seat;
 import com.fourt.railskylines.domain.TrainTrip;
+import com.fourt.railskylines.util.constant.SeatStatusEnum;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -24,4 +25,5 @@ public interface SeatRepository extends JpaRepository<Seat, Long>, JpaSpecificat
     void deleteAllByTrainTrip(TrainTrip trainTrip);
 
     List<Seat> findByCarriageCarriageIdAndTrainTripTrainTripId(Long carriageId, Long trainTripId);
+
 }

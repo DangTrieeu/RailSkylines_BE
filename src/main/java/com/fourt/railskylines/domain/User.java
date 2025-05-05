@@ -51,7 +51,7 @@ public class User {
     private String updatedBy;
 
     @ManyToOne
-    @JoinColumn(name = "role_id")
+    @JoinColumn(name = "role_id", referencedColumnName = "role_id")
     private Role role;
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore

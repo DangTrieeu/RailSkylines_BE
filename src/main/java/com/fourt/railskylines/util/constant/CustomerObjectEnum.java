@@ -4,5 +4,7 @@ public enum CustomerObjectEnum {
     children,
     student,
     elderly,
+    veteran,
+    disabled,
     adult
 }
