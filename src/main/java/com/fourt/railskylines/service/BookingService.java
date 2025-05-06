@@ -1,28 +1,24 @@
 package com.fourt.railskylines.service;
 
-import com.fourt.railskylines.config.VNPayConfig;
 import com.fourt.railskylines.domain.*;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.domain.request.TicketRequestDTO;
 import com.fourt.railskylines.domain.response.PaymentDTO;
-import com.fourt.railskylines.domain.response.PaymentResponse;
-import com.fourt.railskylines.integration.PaymentGateway;
 import com.fourt.railskylines.repository.*;
-import com.fourt.railskylines.util.VNPayUtil;
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.TicketStatusEnum;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,33 +31,66 @@ public class BookingService {
     private final TicketRepository ticketRepository;
     private final PromotionRepository promotionRepository;
     private final UserRepository userRepository;
-    private final PaymentGateway paymentGateway;
     private final NotificationService notificationService;
-    private final VNPayConfig vnPayConfig;
-    private final VNPayUtil vnPayUtil;
+    private final PaymentService paymentService;
+    private final ObjectMapper objectMapper;
 
     public BookingService(SeatRepository seatRepository, BookingRepository bookingRepository,
             TicketRepository ticketRepository, PromotionRepository promotionRepository,
-            UserRepository userRepository, PaymentGateway paymentGateway,
-            NotificationService notificationService, VNPayConfig vnPayConfig, VNPayUtil vnPayUtil) {
+            UserRepository userRepository, NotificationService notificationService,
+            PaymentService paymentService, ObjectMapper objectMapper) {
         this.seatRepository = seatRepository;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
         this.promotionRepository = promotionRepository;
         this.userRepository = userRepository;
-        this.paymentGateway = paymentGateway;
         this.notificationService = notificationService;
-        this.vnPayConfig = vnPayConfig;
-        this.vnPayUtil = vnPayUtil;
+        this.paymentService = paymentService;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
-    public Booking createBooking(BookingRequestDTO request) {
+    public Booking createBooking(BookingRequestDTO request, HttpServletRequest httpServletRequest) {
         // 1. Kiểm tra ghế
         List<Seat> seats = seatRepository.findBySeatIdInAndSeatStatus(request.getSeatIds(), SeatStatusEnum.available);
         if (seats.size() != request.getSeatIds().size()) {
             logger.error("Requested seats: {}, Available seats: {}", request.getSeatIds().size(), seats.size());
             throw new RuntimeException("Một số ghế không khả dụng");
+        }
+
+        // Kiểm tra giá từ tickets param (nếu có)
+        if (request.getTicketsParam() != null && !request.getTicketsParam().isEmpty()) {
+            try {
+                logger.info("Parsing ticketsParam: {}", request.getTicketsParam());
+                List<Map<String, Object>> ticketParams = objectMapper.readValue(request.getTicketsParam(), List.class);
+                for (int i = 0; i < seats.size(); i++) {
+                    Map<String, Object> ticketParam = ticketParams.get(i);
+                    Object seatNumberObj = ticketParam.get("seatNumber");
+                    Object priceObj = ticketParam.get("price");
+
+                    // Kiểm tra seatNumber và price có tồn tại và là kiểu Number
+                    if (!(seatNumberObj instanceof Number)) {
+                        throw new RuntimeException("Invalid seatNumber for ticket at index " + i + ": " + seatNumberObj);
+                    }
+                    if (!(priceObj instanceof Number)) {
+                        throw new RuntimeException("Invalid price for ticket at index " + i + ": " + priceObj);
+                    }
+
+                    Long seatNumber = ((Number) seatNumberObj).longValue();
+                    Double priceFromParam = ((Number) priceObj).doubleValue();
+
+                    // Log để debug
+                    logger.info("Checking seat: dbSeatId={}, dbPrice={}, paramSeatNumber={}, paramPrice={}", 
+                        seats.get(i).getSeatId(), seats.get(i).getPrice(), seatNumber, priceFromParam);
+
+                    if (seats.get(i).getSeatId() != seatNumber || seats.get(i).getPrice() != priceFromParam) {
+                        throw new RuntimeException("Price or seat mismatch for seat " + seatNumber);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error parsing ticket params: {}", e.getMessage(), e);
+                throw new RuntimeException("Invalid ticket parameters: " + e.getMessage());
+            }
         }
 
         // 2. Khóa ghế
@@ -74,6 +103,7 @@ public class BookingService {
         booking.setContactEmail(request.getContactEmail());
         booking.setContactPhone(request.getContactPhone());
         booking.setDate(Instant.now());
+        booking.setPaymentType(request.getPaymentType());
 
         if (request.getUserId() != null) {
             User user = userRepository.findById(request.getUserId())
@@ -102,6 +132,7 @@ public class BookingService {
 
         // 5. Áp dụng khuyến mãi
         double totalPrice = tickets.stream().mapToDouble(Ticket::getPrice).sum();
+        logger.info("Total price before discount: {}", totalPrice);
         if (request.getPromotionIds() != null && !request.getPromotionIds().isEmpty()) {
             List<Promotion> promotions = promotionRepository.findByPromotionIdIn(request.getPromotionIds());
             if (promotions.size() != request.getPromotionIds().size()) {
@@ -109,10 +140,13 @@ public class BookingService {
                         promotions.size());
             }
             double discount = promotions.stream().mapToDouble(Promotion::getDiscount).sum();
+            logger.info("Applied discount: {}", discount);
             totalPrice -= discount;
             booking.setPromotions(promotions);
         }
+        if (totalPrice < 0) totalPrice = 0; // Đảm bảo totalPrice không âm
         booking.setTotalPrice(totalPrice);
+        logger.info("Total price after discount: {}", totalPrice);
 
         // 6. Lưu tạm thời
         bookingRepository.save(booking);
@@ -121,17 +155,27 @@ public class BookingService {
         return booking;
     }
 
-    public String getPaymentUrl(double amount) {
-        PaymentResponse paymentResponse = paymentGateway.processPayment(amount);
-        if (paymentResponse.isSuccess()) {
-            logger.info("Payment URL generated successfully: {}", paymentResponse.getMessage());
-            return paymentResponse.getMessage(); // Trả về paymentUrl từ VNPay
-        } else {
-            logger.error("Failed to generate payment URL: {}", paymentResponse.getMessage());
-            throw new RuntimeException("Failed to generate payment URL: " + paymentResponse.getMessage());
+    public String getPaymentUrl(Booking booking, HttpServletRequest httpServletRequest) {
+        long amount = (long) booking.getTotalPrice();
+        String bankCode = "NCB";
+        httpServletRequest.setAttribute("txnRef", booking.getBookingCode());
+    
+        PaymentDTO.VNPayResponse vnPayResponse = paymentService.createVnPayPayment(httpServletRequest, amount, bankCode);
+    
+        if (!"ok".equals(vnPayResponse.getCode())) {
+            logger.error("Failed to generate payment URL: {}", vnPayResponse.getMessage());
+            throw new RuntimeException("Failed to generate payment URL: " + vnPayResponse.getMessage());
         }
+    
+        String paymentUrl = vnPayResponse.getPaymentUrl();
+        booking.setVnpTxnRef(booking.getBookingCode());
+        bookingRepository.save(booking);
+    
+        logger.info("Payment URL generated successfully: {}", paymentUrl);
+        return paymentUrl;
     }
 
+    @Transactional
     public void updateBookingPaymentStatus(String txnRef, boolean success, String transactionNo) {
         Optional<Booking> bookingOpt = bookingRepository.findByBookingCode(txnRef);
         if (bookingOpt.isEmpty()) {
@@ -172,46 +216,4 @@ public class BookingService {
         }
         return bookingRepository.findByUser(user);
     }
-
-    // public PaymentDTO.VNPayResponse createVnPayPayment(HttpServletRequest
-    // request) {
-    // long amount = Integer.parseInt(request.getParameter("amount")) * 100L;
-    // String bankCode = request.getParameter("bankCode");
-    // Map<String, String> vnpParamsMap = vnPayConfig.getVNPayConfig();
-    // vnpParamsMap.put("vnp_Amount", String.valueOf(amount));
-    // if (bankCode != null && !bankCode.isEmpty()) {
-    // vnpParamsMap.put("vnp_BankCode", bankCode);
-    // }
-    // vnpParamsMap.put("vnp_IpAddr", VNPayUtil.getIpAddress(request));
-    // // build query url
-    // String queryUrl = VNPayUtil.getPaymentURL(vnpParamsMap, true);
-    // String hashData = VNPayUtil.getPaymentURL(vnpParamsMap, false);
-    // String vnpSecureHash = VNPayUtil.hmacSHA512(vnPayConfig.getSecretKey(),
-    // hashData);
-    // queryUrl += "&vnp_SecureHash=" + vnpSecureHash;
-    // String paymentUrl = vnPayConfig.getVnp_PayUrl() + "?" + queryUrl;
-    // return PaymentDTO.VNPayResponse.builder()
-    // .code("ok")
-    // .message("success")
-    // .paymentUrl(paymentUrl).build();
-    // }
-    // public boolean verifyReturn(Map<String, String> params) throws Exception {
-    // String vnpSecureHash = params.get("vnp_SecureHash");
-    // params.remove("vnp_SecureHash");
-
-    // List<String> fieldNames = new ArrayList<>(params.keySet());
-    // Collections.sort(fieldNames);
-
-    // StringBuilder hashData = new StringBuilder();
-    // for (String fieldName : fieldNames) {
-    // String fieldValue = params.get(fieldName);
-    // if (fieldValue != null && !fieldValue.isEmpty()) {
-    // hashData.append(fieldName).append("=").append(fieldValue).append("&");
-    // }
-    // }
-
-    // String calculatedHash = hmacSHA512(vnPayUtil., hashData.substring(0,
-    // hashData.length() - 1));
-    // return calculatedHash.equals(vnpSecureHash);
-    // }
 }

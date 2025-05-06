@@ -53,8 +53,11 @@ public class Booking {
     private String transactionId;
 
     @Column(name = "vnp_txn_ref", nullable = true)
-    private String vnpTxnRef; // New field to store VNPay transaction reference
-    
+    private String vnpTxnRef;
+
+    @Column(name = "payment_type") // Thêm trường paymentType
+    private String paymentType;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = true)
     private User user;
