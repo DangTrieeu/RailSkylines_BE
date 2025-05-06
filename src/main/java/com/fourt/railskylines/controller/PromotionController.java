@@ -5,6 +5,7 @@ import com.fourt.railskylines.domain.request.ReqPromotionDTO;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.service.PromotionService;
 import com.fourt.railskylines.util.annotation.APIMessage;
+import com.fourt.railskylines.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
 
 import org.springframework.data.domain.Pageable;
@@ -49,7 +50,11 @@ public class PromotionController {
 
     @GetMapping("/promotions/{id}")
     @APIMessage("Fetch Promotion By ID")
-    public ResponseEntity<ReqPromotionDTO> getPromotionById(@PathVariable("id") Long id) {
+    public ResponseEntity<ReqPromotionDTO> getPromotionById(@PathVariable("id") Long id) throws IdInvalidException {
+        if (this.promotionService.getPromotionById(id) == null) {
+            throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");
+        }
+
         ReqPromotionDTO promotion = promotionService.getPromotionById(id);
         return new ResponseEntity<>(promotion, HttpStatus.OK);
     }
@@ -64,14 +69,23 @@ public class PromotionController {
     @PutMapping("/promotions/{id}")
     @APIMessage("Update Promotion")
     public ResponseEntity<ReqPromotionDTO> updatePromotion(@PathVariable("id") Long id,
-            @RequestBody ReqPromotionDTO promotionDTO) {
+            @RequestBody ReqPromotionDTO promotionDTO) throws IdInvalidException {
+        if (this.promotionService.getPromotionById(id) == null) {
+            throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");
+        }
+
         ReqPromotionDTO updatedPromotion = promotionService.updatePromotion(id, promotionDTO);
         return new ResponseEntity<>(updatedPromotion, HttpStatus.OK);
     }
 
     @DeleteMapping("/promotions/{id}")
     @APIMessage("Delete Promotion")
-    public ResponseEntity<Void> deletePromotion(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deletePromotion(@PathVariable("id") Long id)
+            throws IdInvalidException {
+        if (this.promotionService.getPromotionById(id) == null) {
+            throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");
+        }
+
         promotionService.deletePromotion(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
@@ -79,8 +93,11 @@ public class PromotionController {
     @PutMapping("/promotions/{id}/status")
     @APIMessage("Update Promotion Status Manually")
     public ResponseEntity<ReqPromotionDTO> updatePromotionStatusManually(
-            @PathVariable Long id,
-            @RequestBody ReqPromotionDTO promotionDTO) {
+            @PathVariable("id") Long id,
+            @RequestBody ReqPromotionDTO promotionDTO) throws IdInvalidException {
+        if (this.promotionService.getPromotionById(id) == null) {
+            throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");
+        }
         ReqPromotionDTO updatedPromotion = promotionService.updatePromotionStatusManually(id, promotionDTO.getStatus());
         return new ResponseEntity<>(updatedPromotion, HttpStatus.OK);
     }
