@@ -1,6 +1,6 @@
 package com.fourt.railskylines.service;
 
-import com.fourt.railskylines.config.VNPAYConfig;
+import com.fourt.railskylines.config.VNPayConfig;
 import com.fourt.railskylines.domain.*;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.domain.request.TicketRequestDTO;
@@ -37,13 +37,13 @@ public class BookingService {
     private final UserRepository userRepository;
     private final PaymentGateway paymentGateway;
     private final NotificationService notificationService;
-    private final VNPAYConfig vnPayConfig;
+    private final VNPayConfig vnPayConfig;
     private final VNPayUtil vnPayUtil;
 
     public BookingService(SeatRepository seatRepository, BookingRepository bookingRepository,
             TicketRepository ticketRepository, PromotionRepository promotionRepository,
             UserRepository userRepository, PaymentGateway paymentGateway,
-            NotificationService notificationService, VNPAYConfig vnPayConfig, VNPayUtil vnPayUtil) {
+            NotificationService notificationService, VNPayConfig vnPayConfig, VNPayUtil vnPayUtil) {
         this.seatRepository = seatRepository;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;

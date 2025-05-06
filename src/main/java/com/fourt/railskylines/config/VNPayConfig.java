@@ -1,38 +1,32 @@
 package com.fourt.railskylines.config;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
+
 import org.springframework.context.annotation.Configuration;
 
 import com.fourt.railskylines.util.VNPayUtil;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Configuration
-public class VNPAYConfig {
+public class VNPayConfig {
     @Getter
-    @Value("${payment.vnPay.url}")
+    @Value("${vnpay.url}")
     private String vnp_PayUrl;
-    @Value("${payment.vnPay.returnUrl}")
+    @Value("${vnpay.returnUrl}")
     private String vnp_ReturnUrl;
-    @Value("${payment.vnPay.tmnCode}")
+    @Value("${vnpay.tmnCode}")
     private String vnp_TmnCode;
     @Getter
-    @Value("${payment.vnPay.secretKey}")
+    @Value("${vnpay.secretKey}")
     private String secretKey;
-    @Value("${payment.vnPay.version}")
+    @Value("${vnpay.version}")
     private String vnp_Version;
-    @Value("${payment.vnPay.command}")
+    @Value("${vnpay.command}")
     private String vnp_Command;
-    @Value("${payment.vnPay.orderType}")
+    @Value("${vnpay.orderType}")
     private String orderType;
 
     public Map<String, String> getVNPayConfig() {

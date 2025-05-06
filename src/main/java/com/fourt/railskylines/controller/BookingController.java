@@ -1,11 +1,12 @@
 package com.fourt.railskylines.controller;
 
-import com.fourt.railskylines.config.VNPAYConfig;
+import com.fourt.railskylines.config.VNPayConfig;
 
 import com.fourt.railskylines.domain.Booking;
 import com.fourt.railskylines.domain.RestResponse;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.domain.response.PaymentDTO;
+import com.fourt.railskylines.domain.response.PaymentResponse;
 import com.fourt.railskylines.service.BookingService;
 import com.fourt.railskylines.util.SecurityUtil;
 
@@ -24,9 +25,9 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 public class BookingController {
     private final BookingService bookingService;
-    private final VNPAYConfig vnpayConfig;
+    private final VNPayConfig vnpayConfig;
 
-    public BookingController(BookingService bookingService, VNPAYConfig vnpayConfig) {
+    public BookingController(BookingService bookingService, VNPayConfig vnpayConfig) {
         this.bookingService = bookingService;
         this.vnpayConfig = vnpayConfig;
     }
@@ -62,33 +63,57 @@ public class BookingController {
         return response;
     }
 
-    @GetMapping("/payments/return")
-    public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String, String> params) throws Exception {
-        // boolean isValid = vnpayConfig.verifyReturn(params);
-        // if (!isValid) {
-        // return ResponseEntity.badRequest().body("Invalid signature");
-        // }
+    // @GetMapping("/payments/return")
+    // public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String,
+    // String> params) throws Exception {
+    // // boolean isValid = vnpayConfig.verifyReturn(params);
+    // // if (!isValid) {
+    // // return ResponseEntity.badRequest().body("Invalid signature");
+    // // }
 
-        String responseCode = params.get("vnp_ResponseCode");
-        if ("00".equals(responseCode)) {
-            String transactionNo = params.get("vnp_TransactionNo");
-            bookingService.updateBookingPaymentStatus(params.get("vnp_TxnRef"), true, transactionNo);
-            return ResponseEntity.ok("Payment successful. Transaction ID: " + transactionNo);
+    // String responseCode = params.get("vnp_ResponseCode");
+    // if ("00".equals(responseCode)) {
+    // String transactionNo = params.get("vnp_TransactionNo");
+    // bookingService.updateBookingPaymentStatus(params.get("vnp_TxnRef"), true,
+    // transactionNo);
+    // return ResponseEntity.ok("Payment successful. Transaction ID: " +
+    // transactionNo);
+    // } else {
+    // bookingService.updateBookingPaymentStatus(params.get("vnp_TxnRef"), false,
+    // null);
+    // return ResponseEntity.badRequest().body("Payment failed. Response Code: " +
+    // responseCode);
+    // }
+    // }
+
+    @GetMapping("/payments/callback")
+    public RestResponse<PaymentResponse> payCallbackHandler(HttpServletRequest request) {
+        String status = request.getParameter("vnp_ResponseCode");
+        PaymentResponse paymentResponse = new PaymentResponse();
+        RestResponse<PaymentResponse> response = new RestResponse<>();
+
+        if ("00".equals(status)) {
+            paymentResponse.setSuccess(true);
+            paymentResponse.setTransactionId(request.getParameter("vnp_TransactionNo"));
+            paymentResponse.setMessage("Payment successful. Transaction ID: " +
+                    request.getParameter("vnp_TransactionNo"));
+
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("Success");
+            response.setError(null);
+            response.setData(paymentResponse);
         } else {
-            bookingService.updateBookingPaymentStatus(params.get("vnp_TxnRef"), false, null);
-            return ResponseEntity.badRequest().body("Payment failed. Response Code: " + responseCode);
+            paymentResponse.setSuccess(false);
+            paymentResponse.setTransactionId(null);
+            paymentResponse.setMessage("Payment failed. Response Code: " + status);
+
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage("Failed");
+            response.setError("Payment failed");
+            response.setData(paymentResponse);
         }
+
+        return response;
     }
 
-    // @GetMapping("/payments/callback")
-    // public RestResponse<PaymentDTO.VNPayResponse>
-    // payCallbackHandler(HttpServletRequest request) {
-    // String status = request.getParameter("vnp_ResponseCode");
-    // if ("00".equals(status)) {
-    // return new RestResponse<>(HttpStatus.OK, "Success", new
-    // PaymentDTO.VNPayResponse("00", "Success", ""));
-    // } else {
-    // return new RestResponse<>(HttpStatus.BAD_REQUEST, "Failed", null);
-    // }
-    // }
 }

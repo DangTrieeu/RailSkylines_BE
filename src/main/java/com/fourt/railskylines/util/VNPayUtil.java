@@ -4,12 +4,16 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.springframework.stereotype.Component;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+@Component
 public class VNPayUtil {
     public static String hmacSHA512(final String key, final String data) {
         try {
