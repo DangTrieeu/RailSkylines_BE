@@ -1,28 +1,28 @@
-package com.fourt.railskylines.domain.request;
+// package com.fourt.railskylines.domain.request;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
-import lombok.Getter;
-import lombok.Setter;
+// import jakarta.validation.constraints.Email;
+// import jakarta.validation.constraints.NotEmpty;
+// import lombok.Getter;
+// import lombok.Setter;
 
-import java.util.List;
+// import java.util.List;
 
-@Getter
-@Setter
-public class BookingRequestDTO {
-    @NotEmpty
-    private List<Long> seatIds;
+// @Getter
+// @Setter
+// public class BookingRequestDTO {
+//     @NotEmpty
+//     private List<Long> seatIds;
 
-    private Long userId;
+//     private Long userId;
 
-    @Email
-    private String contactEmail;
+//     @Email
+//     private String contactEmail;
 
-    private String contactPhone;
+//     private String contactPhone;
 
-    private List<Long> promotionIds;
+//     private List<Long> promotionIds;
     
-    @NotEmpty
-    private List<TicketRequestDTO> tickets;
-}
+//     @NotEmpty
+//     private List<TicketRequestDTO> tickets;
+// }
 
