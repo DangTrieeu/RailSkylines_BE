@@ -44,11 +44,15 @@ public class VNPayPaymentGateway implements PaymentGateway {
             String paymentUrl = vnpayConfig.getVnp_PayUrl() + "?" + queryUrl;
 
             logger.info("Payment URL generated: {}", paymentUrl);
-            return new PaymentResponse(true, "txn_" + VNPayUtil.getRandomNumber(8), paymentUrl);
+
+            // 4 tham số: success, transactionId, txnRef (null ở đây), message
+            return new PaymentResponse(true, "txn_" + VNPayUtil.getRandomNumber(8), null, paymentUrl);
 
         } catch (Exception e) {
             logger.error("Payment processing failed: {}", e.getMessage());
-            return new PaymentResponse(false, null, "Payment failed: " + e.getMessage());
+
+            // 4 tham số: success, transactionId (null), txnRef (null), message
+            return new PaymentResponse(false, null, null, "Payment failed: " + e.getMessage());
         }
     }
 }

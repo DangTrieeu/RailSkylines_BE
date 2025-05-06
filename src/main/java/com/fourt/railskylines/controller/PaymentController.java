@@ -45,7 +45,7 @@ public class PaymentController {
         return response;
     }
 
-    @GetMapping("/payments/callback")
+    @GetMapping("/callback")
     public RestResponse<PaymentResponse> payCallbackHandler(HttpServletRequest request) {
         String status = request.getParameter("vnp_ResponseCode");
         PaymentResponse paymentResponse = new PaymentResponse();
@@ -54,8 +54,10 @@ public class PaymentController {
         if ("00".equals(status)) {
             paymentResponse.setSuccess(true);
             paymentResponse.setTransactionId(request.getParameter("vnp_TransactionNo"));
+            paymentResponse.setTxnRef(request.getParameter("vnp_TxnRef"));
             paymentResponse.setMessage("Payment successful. Transaction ID: " +
-                    request.getParameter("vnp_TransactionNo"));
+                    request.getParameter("vnp_TransactionNo") +
+                    ", Booking ID: " + request.getParameter("vnp_TxnRef"));
 
             response.setStatusCode(HttpStatus.OK.value());
             response.setMessage("Success");
@@ -64,6 +66,7 @@ public class PaymentController {
         } else {
             paymentResponse.setSuccess(false);
             paymentResponse.setTransactionId(null);
+            paymentResponse.setTxnRef(null);
             paymentResponse.setMessage("Payment failed. Response Code: " + status);
 
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());
