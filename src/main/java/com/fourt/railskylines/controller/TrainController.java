@@ -1,5 +1,6 @@
 package com.fourt.railskylines.controller;
 
+import com.fourt.railskylines.domain.Carriage;
 import com.fourt.railskylines.domain.Train;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.service.TrainService;
@@ -7,6 +8,9 @@ import com.fourt.railskylines.util.annotation.APIMessage;
 import com.fourt.railskylines.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
+
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -72,6 +76,13 @@ public class TrainController {
         }
         this.trainService.handleDeleteTrain(id);
         return ResponseEntity.ok("Delete Success");
+    }
+
+    @GetMapping("/trains/{id}/carriages")
+    @APIMessage("Fetch carriages by Train ID")
+    public ResponseEntity<List<Carriage>> getCarriagesByTrainId(@PathVariable("id") Long id) throws IdInvalidException {
+        List<Carriage> carriages = this.trainService.fetchCarriagesByTrainId(id);
+        return ResponseEntity.ok().body(carriages);
     }
 
 }

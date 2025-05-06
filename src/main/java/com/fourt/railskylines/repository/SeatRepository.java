@@ -22,6 +22,10 @@ public interface SeatRepository extends JpaRepository<Seat, Long>, JpaSpecificat
 
     List<Seat> findByTrainTrip(TrainTrip trainTrip);
 
-    // List<Seat> findBySeatIdInAndSeatStatus(List<Long> ids, SeatStatusEnum seatStatus);
+    void deleteAllByTrainTrip(TrainTrip trainTrip);
+
+    List<Seat> findByCarriageCarriageIdAndTrainTripTrainTripId(Long carriageId, Long trainTripId);
+
+    List<Seat> findBySeatIdInAndSeatStatus(List<Long> seatIds, SeatStatusEnum seatStatusEnum);
 
 }

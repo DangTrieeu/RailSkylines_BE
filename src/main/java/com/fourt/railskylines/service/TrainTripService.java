@@ -2,8 +2,9 @@ package com.fourt.railskylines.service;
 
 import com.fourt.railskylines.domain.*;
 import com.fourt.railskylines.domain.request.TrainTripRequestDTO;
-import com.fourt.railskylines.repository.*;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.TrainTripResponseDTO;
+import com.fourt.railskylines.repository.*;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.SeatTypeEnum;
 import com.fourt.railskylines.util.error.IdInvalidException;
@@ -125,7 +126,7 @@ public class TrainTripService {
         trainTrip = trainTripRepository.save(trainTrip);
 
         // 8. Tạo Seats cho TrainTrip dựa trên Carriages của Train
-        List<Carriage> carriages = carriageRepository.findByTrain(train);
+        List<Carriage> carriages = carriageRepository.findByTrainTrainId(train.getTrainId());
         if (carriages.isEmpty()) {
             throw new IdInvalidException("No carriages available for train with ID " + request.getTrainId());
         }
@@ -142,9 +143,8 @@ public class TrainTripService {
                 Seat seat = new Seat();
                 seat.setSeatStatus(SeatStatusEnum.available);
                 seat.setCarriage(carriage);
-                seat.setTrainTrip(trainTrip); // Liên kết Seat với TrainTrip
+                seat.setTrainTrip(trainTrip);
 
-                // Gán SeatType và Price dựa trên CarriageService logic
                 SeatTypeEnum seatType;
                 double price;
                 switch (carriage.getCarriageType()) {
@@ -186,9 +186,75 @@ public class TrainTripService {
         return trainTrip;
     }
 
-    public TrainTrip fetchTrainTripById(Long id) {
+    public TrainTripResponseDTO fetchTrainTripById(Long id) {
         Optional<TrainTrip> trainTripOptional = trainTripRepository.findById(id);
-        return trainTripOptional.orElse(null);
+        if (trainTripOptional.isEmpty()) {
+            return null;
+        }
+
+        TrainTrip trainTrip = trainTripOptional.get();
+        TrainTripResponseDTO response = new TrainTripResponseDTO();
+        response.setTrainTripId(trainTrip.getTrainTripId());
+
+        // Map Train and Carriages
+        TrainTripResponseDTO.TrainDTO trainDTO = new TrainTripResponseDTO.TrainDTO();
+        trainDTO.setTrainId(trainTrip.getTrain().getTrainId());
+        trainDTO.setTrainName(trainTrip.getTrain().getTrainName());
+        trainDTO.setTrainStatus(trainTrip.getTrain().getTrainStatus());
+
+        // Create SimpleTrainDTO for CarriageDTO to avoid recursion
+        TrainTripResponseDTO.SimpleTrainDTO simpleTrainDTO = new TrainTripResponseDTO.SimpleTrainDTO();
+        simpleTrainDTO.setTrainId(trainTrip.getTrain().getTrainId());
+        simpleTrainDTO.setTrainName(trainTrip.getTrain().getTrainName());
+        simpleTrainDTO.setTrainStatus(trainTrip.getTrain().getTrainStatus());
+
+        // Fetch Carriages
+        List<Carriage> carriages = carriageRepository.findByTrainTrainId(trainTrip.getTrain().getTrainId());
+        List<TrainTripResponseDTO.CarriageDTO> carriageDTOs = carriages.stream().map(carriage -> {
+            TrainTripResponseDTO.CarriageDTO carriageDTO = new TrainTripResponseDTO.CarriageDTO();
+            carriageDTO.setCarriageId(carriage.getCarriageId());
+            carriageDTO.setCarriageType(carriage.getCarriageType().toString());
+            carriageDTO.setPrice(carriage.getPrice());
+            carriageDTO.setDiscount(carriage.getDiscount());
+            carriageDTO.setTrain(simpleTrainDTO);
+
+            // Fetch Seats for this Carriage
+            List<Seat> seats = seatRepository.findByCarriageCarriageIdAndTrainTripTrainTripId(carriage.getCarriageId(),
+                    trainTrip.getTrainTripId());
+            List<TrainTripResponseDTO.SeatDTO> seatDTOs = seats.stream().map(seat -> {
+                TrainTripResponseDTO.SeatDTO seatDTO = new TrainTripResponseDTO.SeatDTO();
+                seatDTO.setSeatId(seat.getSeatId());
+                seatDTO.setSeatType(seat.getSeatType());
+                seatDTO.setSeatStatus(seat.getSeatStatus());
+                // Calculate price based on seatType and carriage
+                double price;
+                switch (seat.getSeatType()) {
+                    case LEVEL_3:
+                        price = carriage.getPrice() * (100 - 2 * carriage.getDiscount()) / 100;
+                        break;
+                    case LEVEL_2:
+                        price = carriage.getPrice() * (100 - carriage.getDiscount()) / 100;
+                        break;
+                    case LEVEL_1:
+                    default:
+                        price = carriage.getPrice();
+                        break;
+                }
+                seatDTO.setPrice(price);
+                return seatDTO;
+            }).collect(Collectors.toList());
+
+            carriageDTO.setSeats(seatDTOs);
+            return carriageDTO;
+        }).collect(Collectors.toList());
+
+        trainDTO.setCarriages(carriageDTOs);
+        response.setTrain(trainDTO);
+        response.setRoute(trainTrip.getRoute());
+        response.setSchedule(trainTrip.getSchedule());
+
+        return response;
+
     }
 
     public ResultPaginationDTO fetchAllTrainTrips(Specification<TrainTrip> spec, Pageable pageable) {
@@ -200,16 +266,81 @@ public class TrainTripService {
         mt.setPages(pageTrainTrip.getTotalPages());
         mt.setTotal(pageTrainTrip.getTotalElements());
         rs.setMeta(mt);
-        rs.setResult(pageTrainTrip.getContent());
+
+        // Map TrainTrip entities to TrainTripResponseDTO
+        List<TrainTripResponseDTO> trainTripDTOs = pageTrainTrip.getContent().stream().map(trainTrip -> {
+            TrainTripResponseDTO response = new TrainTripResponseDTO();
+            response.setTrainTripId(trainTrip.getTrainTripId());
+
+            // Map Train and Carriages
+            TrainTripResponseDTO.TrainDTO trainDTO = new TrainTripResponseDTO.TrainDTO();
+            trainDTO.setTrainId(trainTrip.getTrain().getTrainId());
+            trainDTO.setTrainName(trainTrip.getTrain().getTrainName());
+            trainDTO.setTrainStatus(trainTrip.getTrain().getTrainStatus());
+
+            // Create SimpleTrainDTO for CarriageDTO to avoid recursion
+            TrainTripResponseDTO.SimpleTrainDTO simpleTrainDTO = new TrainTripResponseDTO.SimpleTrainDTO();
+            simpleTrainDTO.setTrainId(trainTrip.getTrain().getTrainId());
+            simpleTrainDTO.setTrainName(trainTrip.getTrain().getTrainName());
+            simpleTrainDTO.setTrainStatus(trainTrip.getTrain().getTrainStatus());
+
+            // Fetch Carriages
+            List<Carriage> carriages = carriageRepository.findByTrainTrainId(trainTrip.getTrain().getTrainId());
+            List<TrainTripResponseDTO.CarriageDTO> carriageDTOs = carriages.stream().map(carriage -> {
+                TrainTripResponseDTO.CarriageDTO carriageDTO = new TrainTripResponseDTO.CarriageDTO();
+                carriageDTO.setCarriageId(carriage.getCarriageId());
+                carriageDTO.setCarriageType(carriage.getCarriageType().toString());
+                carriageDTO.setPrice(carriage.getPrice());
+                carriageDTO.setDiscount(carriage.getDiscount());
+                carriageDTO.setTrain(simpleTrainDTO);
+
+                // Fetch Seats for this Carriage
+                List<Seat> seats = seatRepository.findByCarriageCarriageIdAndTrainTripTrainTripId(
+                        carriage.getCarriageId(), trainTrip.getTrainTripId());
+                List<TrainTripResponseDTO.SeatDTO> seatDTOs = seats.stream().map(seat -> {
+                    TrainTripResponseDTO.SeatDTO seatDTO = new TrainTripResponseDTO.SeatDTO();
+                    seatDTO.setSeatId(seat.getSeatId());
+                    seatDTO.setSeatType(seat.getSeatType());
+                    seatDTO.setSeatStatus(seat.getSeatStatus());
+                    // Calculate price based on seatType and carriage
+                    double price;
+                    switch (seat.getSeatType()) {
+                        case LEVEL_3:
+                            price = carriage.getPrice() * (100 - 2 * carriage.getDiscount()) / 100;
+                            break;
+                        case LEVEL_2:
+                            price = carriage.getPrice() * (100 - carriage.getDiscount()) / 100;
+                            break;
+                        case LEVEL_1:
+                        default:
+                            price = carriage.getPrice();
+                            break;
+                    }
+                    seatDTO.setPrice(price);
+                    return seatDTO;
+                }).collect(Collectors.toList());
+
+                carriageDTO.setSeats(seatDTOs);
+                return carriageDTO;
+            }).collect(Collectors.toList());
+
+            trainDTO.setCarriages(carriageDTOs);
+            response.setTrain(trainDTO);
+            response.setRoute(trainTrip.getRoute());
+            response.setSchedule(trainTrip.getSchedule());
+
+            return response;
+
+        }).collect(Collectors.toList());
+
+        rs.setResult(trainTripDTOs);
         return rs;
     }
 
     @Transactional
     public TrainTrip handleUpdateTrainTrip(Long id, TrainTripRequestDTO request) throws IdInvalidException {
-        TrainTrip existingTrainTrip = fetchTrainTripById(id);
-        if (existingTrainTrip == null) {
-            throw new IdInvalidException("TrainTrip with ID " + id + " does not exist");
-        }
+        TrainTrip existingTrainTrip = trainTripRepository.findById(id)
+                .orElseThrow(() -> new IdInvalidException("TrainTrip with ID " + id + " does not exist"));
 
         // Cập nhật Train
         if (!trainRepository.existsById(request.getTrainId())) {
@@ -264,7 +395,7 @@ public class TrainTripService {
         ClockTime arrival = existingTrainTrip.getSchedule().getArrival();
         arrival.setDate(request.getArrivalTime());
         arrival.setHour(request.getArrivalTime().atZone(ZoneId.systemDefault()).getHour() +
-                request.getArrivalTime().atZone(ZoneId.systemDefault()).getMinute() / 60.0);
+                request.getArrivalTime().atZone(ZoneId.systemDefault()).getMinute() / 100);
         arrival.setMinute(request.getArrivalTime().atZone(ZoneId.systemDefault()).getMinute());
 
         clockTimeRepository.save(departure);
@@ -277,7 +408,7 @@ public class TrainTripService {
         existingTrainTrip.setSchedule(schedule);
 
         // Cập nhật Seats (xóa seats cũ và tạo mới dựa trên Carriages của Train)
-        List<Carriage> carriages = carriageRepository.findByTrain(train);
+        List<Carriage> carriages = carriageRepository.findByTrainTrainId(train.getTrainId());
         if (carriages.isEmpty()) {
             throw new IdInvalidException("No carriages available for train with ID " + request.getTrainId());
         }
@@ -297,7 +428,7 @@ public class TrainTripService {
                 Seat seat = new Seat();
                 seat.setSeatStatus(SeatStatusEnum.available);
                 seat.setCarriage(carriage);
-                seat.setTrainTrip(existingTrainTrip); // Liên kết Seat với TrainTrip
+                seat.setTrainTrip(existingTrainTrip);
 
                 SeatTypeEnum seatType;
                 double price;
@@ -340,7 +471,6 @@ public class TrainTripService {
         return trainTripRepository.save(existingTrainTrip);
     }
 
-    @Transactional
     public void handleDeleteTrainTrip(Long id) throws IdInvalidException {
         if (!trainTripRepository.existsById(id)) {
             throw new IdInvalidException("TrainTrip with ID " + id + " does not exist");

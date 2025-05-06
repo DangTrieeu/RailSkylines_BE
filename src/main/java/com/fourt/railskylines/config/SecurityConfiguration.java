@@ -45,11 +45,13 @@ public class SecurityConfiguration {
         String[] whiteList = {
                 "/",
                 "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register",
+                "api/v1/train-trips/**",
                 "/storage/**",
                 "/api/v1/email/**",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
+                "/api/v1/payments/return"
         };
 
         http
@@ -61,6 +63,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/train-trips/**").permitAll()
                                 .anyRequest().authenticated())
                 // .authorizeHttpRequests(authz -> authz
                 // .anyRequest().permitAll())

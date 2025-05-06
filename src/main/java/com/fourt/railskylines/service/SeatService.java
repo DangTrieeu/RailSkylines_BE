@@ -102,7 +102,6 @@ public class SeatService {
         if (seat.getPrice() > 0) {
             existingSeat.setPrice(seat.getPrice());
         }
-        // Note: Ticket relationship is managed separately (e.g., via TicketService)
 
         return seatRepository.save(existingSeat);
     }

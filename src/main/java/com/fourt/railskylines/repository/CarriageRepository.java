@@ -12,4 +12,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CarriageRepository extends JpaRepository<Carriage, Long>, JpaSpecificationExecutor<Carriage> {
     List<Carriage> findByTrain(Train train);
+
+    List<Carriage> findByTrainTrainId(Long trainId);
 }

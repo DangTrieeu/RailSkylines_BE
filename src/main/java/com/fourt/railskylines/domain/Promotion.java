@@ -43,11 +43,9 @@ public class Promotion {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private PromotionStatusEnum status; 
+    private PromotionStatusEnum status;
 
     @ManyToMany
-    @JoinTable(name = "booking_promotion",
-               joinColumns = @JoinColumn(name = "promotion_id"),
-               inverseJoinColumns = @JoinColumn(name = "booking_id"))
+    @JoinTable(name = "booking_promotion", joinColumns = @JoinColumn(name = "promotion_id"), inverseJoinColumns = @JoinColumn(name = "booking_id"))
     private List<Booking> bookings;
 }

@@ -52,6 +52,9 @@ public class Booking {
     @Column(name = "transaction_id")
     private String transactionId;
 
+    @Column(name = "vnp_txn_ref", nullable = true)
+    private String vnpTxnRef; // New field to store VNPay transaction reference
+    
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = true)
     private User user;
@@ -66,9 +69,7 @@ public class Booking {
     private List<Ticket> tickets;
 
     @ManyToMany
-    @JoinTable(name = "booking_promotion", 
-               joinColumns = @JoinColumn(name = "booking_id"), 
-               inverseJoinColumns = @JoinColumn(name = "promotion_id"))
+    @JoinTable(name = "booking_promotion", joinColumns = @JoinColumn(name = "booking_id"), inverseJoinColumns = @JoinColumn(name = "promotion_id"))
     private List<Promotion> promotions;
 
     @PrePersist

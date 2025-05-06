@@ -63,7 +63,8 @@ public class PromotionController {
 
     @PutMapping("/promotions/{id}")
     @APIMessage("Update Promotion")
-    public ResponseEntity<ReqPromotionDTO> updatePromotion(@PathVariable Long id, @RequestBody ReqPromotionDTO promotionDTO) {
+    public ResponseEntity<ReqPromotionDTO> updatePromotion(@PathVariable Long id,
+            @RequestBody ReqPromotionDTO promotionDTO) {
         ReqPromotionDTO updatedPromotion = promotionService.updatePromotion(id, promotionDTO);
         return new ResponseEntity<>(updatedPromotion, HttpStatus.OK);
     }

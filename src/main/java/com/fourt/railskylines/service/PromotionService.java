@@ -6,6 +6,7 @@ import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.PromotionRepository;
 import com.fourt.railskylines.util.constant.PromotionStatusEnum;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
