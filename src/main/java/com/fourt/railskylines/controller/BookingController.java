@@ -53,15 +53,16 @@ public class BookingController {
     }
 
     //
-    @GetMapping("/vn-pay")
-    public RestResponse<PaymentDTO.VNPayResponse> pay(HttpServletRequest request) {
-        RestResponse<PaymentDTO.VNPayResponse> response = new RestResponse<>();
-        response.setStatusCode(HttpStatus.OK.value());
-        response.setError(null);
-        response.setMessage("Success");
-        response.setData(bookingService.createVnPayPayment(request));
-        return response;
-    }
+    // @GetMapping("/vn-pay")
+    // public RestResponse<PaymentDTO.VNPayResponse> pay(HttpServletRequest request)
+    // {
+    // RestResponse<PaymentDTO.VNPayResponse> response = new RestResponse<>();
+    // response.setStatusCode(HttpStatus.OK.value());
+    // response.setError(null);
+    // response.setMessage("Success");
+    // response.setData(bookingService.createVnPayPayment(request));
+    // return response;
+    // }
 
     // @GetMapping("/payments/return")
     // public ResponseEntity<String> handleVNPayReturn(@RequestParam Map<String,
@@ -86,34 +87,35 @@ public class BookingController {
     // }
     // }
 
-    @GetMapping("/payments/callback")
-    public RestResponse<PaymentResponse> payCallbackHandler(HttpServletRequest request) {
-        String status = request.getParameter("vnp_ResponseCode");
-        PaymentResponse paymentResponse = new PaymentResponse();
-        RestResponse<PaymentResponse> response = new RestResponse<>();
+    // @GetMapping("/payments/callback")
+    // public RestResponse<PaymentResponse> payCallbackHandler(HttpServletRequest
+    // request) {
+    // String status = request.getParameter("vnp_ResponseCode");
+    // PaymentResponse paymentResponse = new PaymentResponse();
+    // RestResponse<PaymentResponse> response = new RestResponse<>();
 
-        if ("00".equals(status)) {
-            paymentResponse.setSuccess(true);
-            paymentResponse.setTransactionId(request.getParameter("vnp_TransactionNo"));
-            paymentResponse.setMessage("Payment successful. Transaction ID: " +
-                    request.getParameter("vnp_TransactionNo"));
+    // if ("00".equals(status)) {
+    // paymentResponse.setSuccess(true);
+    // paymentResponse.setTransactionId(request.getParameter("vnp_TransactionNo"));
+    // paymentResponse.setMessage("Payment successful. Transaction ID: " +
+    // request.getParameter("vnp_TransactionNo"));
 
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("Success");
-            response.setError(null);
-            response.setData(paymentResponse);
-        } else {
-            paymentResponse.setSuccess(false);
-            paymentResponse.setTransactionId(null);
-            paymentResponse.setMessage("Payment failed. Response Code: " + status);
+    // response.setStatusCode(HttpStatus.OK.value());
+    // response.setMessage("Success");
+    // response.setError(null);
+    // response.setData(paymentResponse);
+    // } else {
+    // paymentResponse.setSuccess(false);
+    // paymentResponse.setTransactionId(null);
+    // paymentResponse.setMessage("Payment failed. Response Code: " + status);
 
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("Failed");
-            response.setError("Payment failed");
-            response.setData(paymentResponse);
-        }
+    // response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+    // response.setMessage("Failed");
+    // response.setError("Payment failed");
+    // response.setData(paymentResponse);
+    // }
 
-        return response;
-    }
+    // return response;
+    // }
 
 }
