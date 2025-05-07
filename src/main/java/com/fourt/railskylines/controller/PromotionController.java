@@ -68,6 +68,7 @@ public class PromotionController {
 
     @PutMapping("/promotions/{id}")
     @APIMessage("Update Promotion")
+
     public ResponseEntity<ReqPromotionDTO> updatePromotion(@PathVariable("id") Long id,
             @RequestBody ReqPromotionDTO promotionDTO) throws IdInvalidException {
         if (this.promotionService.getPromotionById(id) == null) {
@@ -80,6 +81,7 @@ public class PromotionController {
 
     @DeleteMapping("/promotions/{id}")
     @APIMessage("Delete Promotion")
+
     public ResponseEntity<Void> deletePromotion(@PathVariable("id") Long id)
             throws IdInvalidException {
         if (this.promotionService.getPromotionById(id) == null) {
@@ -94,6 +96,7 @@ public class PromotionController {
     @APIMessage("Update Promotion Status Manually")
     public ResponseEntity<ReqPromotionDTO> updatePromotionStatusManually(
             @PathVariable("id") Long id,
+
             @RequestBody ReqPromotionDTO promotionDTO) throws IdInvalidException {
         if (this.promotionService.getPromotionById(id) == null) {
             throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");

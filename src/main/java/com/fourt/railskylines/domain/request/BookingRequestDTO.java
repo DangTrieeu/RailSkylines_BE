@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @Setter
 public class BookingRequestDTO {
-    @NotEmpty
+    // @NotEmpty
     private List<Long> seatIds;
 
     private Long userId;
@@ -24,5 +24,8 @@ public class BookingRequestDTO {
     
     @NotEmpty
     private List<TicketRequestDTO> tickets;
-}
 
+    private String paymentType;
+
+    private String ticketsParam;
+}

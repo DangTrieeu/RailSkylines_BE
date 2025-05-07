@@ -2,6 +2,7 @@ package com.fourt.railskylines.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,13 @@ public class PermissionInterceptor implements HandlerInterceptor {
     @Autowired
     UserService userService;
 
+    private static final List<String> WHITELIST = Arrays.asList(
+            "/",
+            "/api/v1/auth/**",
+            "/storage/**",
+            "/api/v1/files",
+            "/api/v1/vn-pay");
+
     @Override
     @Transactional
     public boolean preHandle(
@@ -44,26 +52,42 @@ public class PermissionInterceptor implements HandlerInterceptor {
         System.out.println(">>> httpMethod= " + httpMethod);
         System.out.println(">>> requestURI= " + requestURI);
 
-        // check permission
-        String email = SecurityUtil.getCurrentUserLogin().isPresent() == true
+        // Kiểm tra xem endpoint có nằm trong whitelist không
+        boolean isWhitelisted = WHITELIST.stream().anyMatch(whitelistPath -> {
+            if (whitelistPath.endsWith("/**")) {
+                String prefix = whitelistPath.substring(0, whitelistPath.length() - 3);
+                return requestURI.startsWith(prefix);
+            }
+            return requestURI.equals(whitelistPath);
+        });
+
+        if (isWhitelisted) {
+            System.out.println(">>> Bypassing permission check for whitelisted endpoint: " + requestURI);
+            return true; // Bỏ qua kiểm tra quyền
+        }
+
+        // Check permission
+        String email = SecurityUtil.getCurrentUserLogin().isPresent()
                 ? SecurityUtil.getCurrentUserLogin().get()
                 : "";
-        if (email != null && !email.isEmpty()) {
+        if (!email.isEmpty()) {
             User user = this.userService.handleGetUserByUsername(email);
             if (user != null) {
                 Role role = user.getRole();
                 if (role != null) {
                     List<Permission> permissions = role.getPermissions();
-                    boolean isAllow = permissions.stream().anyMatch(item -> item.getApiPath().equals(path)
-                            && item.getMethod().equals(httpMethod));
+                    boolean isAllow = permissions.stream()
+                            .anyMatch(item -> item.getApiPath().equals(path) && item.getMethod().equals(httpMethod));
 
-                    if (isAllow == false) {
+                    if (!isAllow) {
                         throw new PermissionException("Bạn không có quyền truy cập endpoint này.");
                     }
                 } else {
                     throw new PermissionException("Bạn không có quyền truy cập endpoint này.");
                 }
             }
+        } else {
+            throw new PermissionException("Bạn không có quyền truy cập endpoint này.");
         }
 
         return true;

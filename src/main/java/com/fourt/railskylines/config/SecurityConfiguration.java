@@ -45,7 +45,7 @@ public class SecurityConfiguration {
         String[] whiteList = {
                 "/",
                 "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register",
-                "api/v1/train-trips/**",
+                "/api/v1/train-trips/**",
                 "/storage/**",
                 "/api/v1/email/**",
                 "/v3/api-docs/**",
@@ -54,6 +54,10 @@ public class SecurityConfiguration {
                 "/api/v1/auth/**",
                 "/api/v1/auth/verify-code",
                 "/api/v1/auth/verify-email"
+                "/api/v1/vn-pay",
+                "/api/v1/bookings", // Thêm endpoint này
+                "/api/v1/bookings/**",
+                
         };
 
         http
@@ -62,6 +66,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(
                         authz -> authz
                                 .requestMatchers(whiteList).permitAll()
+                                .requestMatchers("/api/v1/callback/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
@@ -70,15 +75,9 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
                                 .anyRequest().authenticated())
-                // .authorizeHttpRequests(authz -> authz
-                // .anyRequest().permitAll())
-                .oauth2ResourceServer((oauth2) -> oauth2.jwt(Customizer.withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(customAuthenticationEntryPoint))
-                // .exceptionHandling(
-                // exceptions -> exceptions
-                // .authenticationEntryPoint(customAuthenticationEntryPoint) // 401
-                // .accessDeniedHandler(new BearerTokenAccessDeniedHandler())) // 403
-
                 .formLogin(f -> f.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
@@ -120,5 +119,4 @@ public class SecurityConfiguration {
         return new SecretKeySpec(keyBytes, 0, keyBytes.length,
                 SecurityUtil.JWT_ALGORITHM.getName());
     }
-
 }

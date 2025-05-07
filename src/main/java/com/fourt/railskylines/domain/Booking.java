@@ -52,6 +52,12 @@ public class Booking {
     @Column(name = "transaction_id")
     private String transactionId;
 
+    @Column(name = "vnp_txn_ref", nullable = true)
+    private String vnpTxnRef;
+
+    @Column(name = "payment_type") // Thêm trường paymentType
+    private String paymentType;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = true)
     private User user;

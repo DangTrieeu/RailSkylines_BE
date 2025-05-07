@@ -1,4 +1,4 @@
-package com.fourt.railskylines.domain;
+package com.fourt.railskylines.domain.response;
 
 public class RestResponse<T> {
     private int statusCode;

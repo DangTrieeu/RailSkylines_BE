@@ -1,10 +1,11 @@
 package com.fourt.railskylines.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fourt.railskylines.domain.response.RestResponse;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.fourt.railskylines.domain.RestResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;

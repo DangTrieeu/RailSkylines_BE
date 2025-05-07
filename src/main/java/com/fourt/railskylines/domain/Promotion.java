@@ -26,7 +26,6 @@ import lombok.Setter;
 public class Promotion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "promotion_id")
     private long promotionId;
 
     private String promotionCode;

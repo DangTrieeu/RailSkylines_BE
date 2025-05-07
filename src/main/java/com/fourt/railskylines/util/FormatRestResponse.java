@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import jakarta.servlet.http.HttpServletResponse;
-import com.fourt.railskylines.domain.RestResponse;
+
+import com.fourt.railskylines.domain.response.RestResponse;
 import com.fourt.railskylines.util.annotation.APIMessage;
 
 @ControllerAdvice

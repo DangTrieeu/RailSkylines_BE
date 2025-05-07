@@ -1,0 +1,114 @@
+package com.fourt.railskylines.controller;
+
+import com.fourt.railskylines.domain.response.RestResponse;
+import com.fourt.railskylines.domain.response.PaymentDTO;
+import com.fourt.railskylines.domain.response.PaymentResponse;
+import com.fourt.railskylines.service.BookingService;
+import com.fourt.railskylines.service.PaymentService;
+import com.fourt.railskylines.config.VNPayConfig;
+import com.fourt.railskylines.util.VNPayUtil;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/v1")
+@RequiredArgsConstructor
+public class PaymentController {
+    private final PaymentService paymentService;
+    private final BookingService bookingService;
+    private final VNPayConfig vnPayConfig;
+
+    @GetMapping("/vn-pay")
+    public RestResponse<PaymentDTO.VNPayResponse> pay(HttpServletRequest request) {
+        String amountStr = request.getParameter("amount");
+        if (amountStr == null) {
+            throw new IllegalArgumentException("Amount parameter is required");
+        }
+        long amount;
+        try {
+            amount = Long.parseLong(amountStr);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid amount format: " + amountStr);
+        }
+        String bankCode = request.getParameter("bankCode");
+        String txnRef = request.getParameter("txnRef"); // Lấy txnRef từ request nếu có
+
+        RestResponse<PaymentDTO.VNPayResponse> response = new RestResponse<>();
+        response.setStatusCode(HttpStatus.OK.value());
+        response.setError(null);
+        response.setMessage("Success");
+        response.setData(paymentService.createVnPayPayment(request, amount, bankCode, txnRef != null ? txnRef : VNPayUtil.getRandomNumber(8)));
+        return response;
+    }
+
+    
+    @GetMapping("/callback")
+    public RestResponse<PaymentResponse> payCallbackHandler(HttpServletRequest request) {
+        // Validate VNPay secure hash
+        String vnpSecureHash = request.getParameter("vnp_SecureHash");
+        Map<String, String> vnpParams = new HashMap<>();
+        for (String paramName : request.getParameterMap().keySet()) {
+            if (!paramName.equals("vnp_SecureHash")) {
+                vnpParams.put(paramName, request.getParameter(paramName));
+            }
+        }
+        String hashData = VNPayUtil.getPaymentURL(vnpParams, false);
+        String calculatedHash = VNPayUtil.hmacSHA512(vnPayConfig.getSecretKey(), hashData);
+
+        if (!calculatedHash.equals(vnpSecureHash)) {
+            RestResponse<PaymentResponse> response = new RestResponse<>();
+            PaymentResponse paymentResponse = new PaymentResponse();
+            paymentResponse.setSuccess(false);
+            paymentResponse.setMessage("Invalid secure hash");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage("Failed");
+            response.setError("Invalid secure hash");
+            response.setData(paymentResponse);
+            return response;
+        }
+
+        String status = request.getParameter("vnp_ResponseCode");
+        String txnRef = request.getParameter("vnp_TxnRef");
+        String transactionNo = request.getParameter("vnp_TransactionNo");
+
+        PaymentResponse paymentResponse = new PaymentResponse();
+        RestResponse<PaymentResponse> response = new RestResponse<>();
+
+        boolean success = "00".equals(status);
+        bookingService.updateBookingPaymentStatus(txnRef, success, transactionNo);
+
+        if (success) {
+            paymentResponse.setSuccess(true);
+            paymentResponse.setTransactionId(transactionNo);
+            paymentResponse.setTxnRef(txnRef);
+            paymentResponse.setMessage("Payment successful. Transaction ID: " + transactionNo +
+                    ", Booking ID: " + txnRef);
+
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("Success");
+            response.setError(null);
+            response.setData(paymentResponse);
+        } else {
+            paymentResponse.setSuccess(false);
+            paymentResponse.setTransactionId(null);
+            paymentResponse.setTxnRef(null);
+            paymentResponse.setMessage("Payment failed. Response Code: " + status);
+
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage("Failed");
+            response.setError("Payment failed");
+            response.setData(paymentResponse);
+        }
+
+        return response;
+    }
+}
