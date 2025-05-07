@@ -17,7 +17,7 @@ public class VNPayPaymentGateway implements PaymentGateway {
     private final VNPayConfig vnpayConfig;
 
     @Override
-    public PaymentResponse processPayment(double amount) {
+    public PaymentResponse processPayment(double amount, String txnRef) {
         try {
             // Chuyển đổi amount sang định dạng VNPay (nhân 100)
             long vnpAmount = (long) (amount * 100);
@@ -26,8 +26,8 @@ public class VNPayPaymentGateway implements PaymentGateway {
             String bankCode = null; // Không chỉ định ngân hàng cụ thể
             String ipAddr = "127.0.0.1"; // Giả định IP, thay bằng IP thực tế nếu cần
 
-            // Lấy cấu hình VNPay cơ bản
-            Map<String, String> vnpParamsMap = vnpayConfig.getVNPayConfig();
+            // Lấy cấu hình VNPay cơ bản với txnRef
+            Map<String, String> vnpParamsMap = vnpayConfig.getVNPayConfig(txnRef);
 
             // Thêm các tham số thanh toán
             vnpParamsMap.put("vnp_Amount", String.valueOf(vnpAmount));
@@ -43,16 +43,16 @@ public class VNPayPaymentGateway implements PaymentGateway {
             queryUrl += "&vnp_SecureHash=" + vnpSecureHash;
             String paymentUrl = vnpayConfig.getVnp_PayUrl() + "?" + queryUrl;
 
-            logger.info("Payment URL generated: {}", paymentUrl);
+            logger.info("Payment URL generated for txnRef {}: {}", txnRef, paymentUrl);
 
-            // 4 tham số: success, transactionId, txnRef (null ở đây), message
-            return new PaymentResponse(true, "txn_" + VNPayUtil.getRandomNumber(8), null, paymentUrl);
+            // Trả về PaymentResponse với txnRef
+            return new PaymentResponse(true, "txn_" + VNPayUtil.getRandomNumber(8), txnRef, paymentUrl);
 
         } catch (Exception e) {
-            logger.error("Payment processing failed: {}", e.getMessage());
+            logger.error("Payment processing failed for txnRef {}: {}", txnRef, e.getMessage());
 
-            // 4 tham số: success, transactionId (null), txnRef (null), message
-            return new PaymentResponse(false, null, null, "Payment failed: " + e.getMessage());
+            // Trả về PaymentResponse với txnRef
+            return new PaymentResponse(false, null, txnRef, "Payment failed: " + e.getMessage());
         }
     }
 }

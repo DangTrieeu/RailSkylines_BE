@@ -15,9 +15,9 @@ import java.util.*;
 public class PaymentService {
     private final VNPayConfig vnPayConfig;
 
-    public PaymentDTO.VNPayResponse createVnPayPayment(HttpServletRequest request, long amount, String bankCode) {
+    public PaymentDTO.VNPayResponse createVnPayPayment(HttpServletRequest request, long amount, String bankCode, String txnRef) {
         long vnpAmount = amount * 100L; // VNPay expects amount in VND * 100
-        Map<String, String> vnpParamsMap = vnPayConfig.getVNPayConfig();
+        Map<String, String> vnpParamsMap = vnPayConfig.getVNPayConfig(txnRef); // Truyền txnRef
         vnpParamsMap.put("vnp_Amount", String.valueOf(vnpAmount));
         if (bankCode != null && !bankCode.isEmpty()) {
             vnpParamsMap.put("vnp_BankCode", bankCode);

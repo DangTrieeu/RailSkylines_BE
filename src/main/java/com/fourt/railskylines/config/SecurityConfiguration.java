@@ -174,7 +174,9 @@ public class SecurityConfiguration {
                 "/swagger-ui/**",
                 "/swagger-ui.html",
                 "/api/v1/vn-pay",
-                "/api/v1/callback"
+                "/api/v1/bookings", // Thêm endpoint này
+                "/api/v1/bookings/**",
+                
         };
 
         http
@@ -183,6 +185,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(
                         authz -> authz
                                 .requestMatchers(whiteList).permitAll()
+                                .requestMatchers("/api/v1/callback/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()

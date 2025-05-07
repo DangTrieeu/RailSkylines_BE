@@ -8,12 +8,14 @@ import com.fourt.railskylines.repository.*;
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.TicketStatusEnum;
+import com.fourt.railskylines.util.VNPayUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
@@ -68,7 +70,6 @@ public class BookingService {
                     Object seatNumberObj = ticketParam.get("seatNumber");
                     Object priceObj = ticketParam.get("price");
 
-                    // Kiểm tra seatNumber và price có tồn tại và là kiểu Number
                     if (!(seatNumberObj instanceof Number)) {
                         throw new RuntimeException("Invalid seatNumber for ticket at index " + i + ": " + seatNumberObj);
                     }
@@ -79,7 +80,6 @@ public class BookingService {
                     Long seatNumber = ((Number) seatNumberObj).longValue();
                     Double priceFromParam = ((Number) priceObj).doubleValue();
 
-                    // Log để debug
                     logger.info("Checking seat: dbSeatId={}, dbPrice={}, paramSeatNumber={}, paramPrice={}", 
                         seats.get(i).getSeatId(), seats.get(i).getPrice(), seatNumber, priceFromParam);
 
@@ -104,6 +104,7 @@ public class BookingService {
         booking.setContactPhone(request.getContactPhone());
         booking.setDate(Instant.now());
         booking.setPaymentType(request.getPaymentType());
+        booking.setVnpTxnRef(booking.getBookingCode());
 
         if (request.getUserId() != null) {
             User user = userRepository.findById(request.getUserId())
@@ -144,7 +145,7 @@ public class BookingService {
             totalPrice -= discount;
             booking.setPromotions(promotions);
         }
-        if (totalPrice < 0) totalPrice = 0; // Đảm bảo totalPrice không âm
+        if (totalPrice < 0) totalPrice = 0;
         booking.setTotalPrice(totalPrice);
         logger.info("Total price after discount: {}", totalPrice);
 
@@ -160,7 +161,7 @@ public class BookingService {
         String bankCode = "NCB";
         httpServletRequest.setAttribute("txnRef", booking.getBookingCode());
     
-        PaymentDTO.VNPayResponse vnPayResponse = paymentService.createVnPayPayment(httpServletRequest, amount, bankCode);
+        PaymentDTO.VNPayResponse vnPayResponse = paymentService.createVnPayPayment(httpServletRequest, amount, bankCode, booking.getBookingCode());
     
         if (!"ok".equals(vnPayResponse.getCode())) {
             logger.error("Failed to generate payment URL: {}", vnPayResponse.getMessage());
@@ -177,7 +178,7 @@ public class BookingService {
 
     @Transactional
     public void updateBookingPaymentStatus(String txnRef, boolean success, String transactionNo) {
-        Optional<Booking> bookingOpt = bookingRepository.findByBookingCode(txnRef);
+        Optional<Booking> bookingOpt = bookingRepository.findByVnpTxnRef(txnRef);
         if (bookingOpt.isEmpty()) {
             logger.error("Booking not found for transaction reference: {}", txnRef);
             throw new RuntimeException("Booking not found for transaction reference: " + txnRef);
@@ -185,11 +186,12 @@ public class BookingService {
 
         Booking booking = bookingOpt.get();
         List<Seat> seats = booking.getTickets().stream().map(Ticket::getSeat).toList();
+
         if (success) {
             booking.setPaymentStatus(PaymentStatusEnum.success);
             booking.setPayAt(Instant.now());
             booking.setTransactionId(transactionNo);
-            seats.forEach(seat -> seat.setSeatStatus(SeatStatusEnum.unavailable));
+            seats.forEach(seat -> seat.setSeatStatus(SeatStatusEnum.booked));
             booking.getTickets().forEach(ticket -> ticket.setTicketStatus(TicketStatusEnum.used));
             try {
                 notificationService.sendBookingConfirmation(booking, booking.getTickets());
@@ -201,12 +203,45 @@ public class BookingService {
         } else {
             booking.setPaymentStatus(PaymentStatusEnum.failed);
             seats.forEach(seat -> seat.setSeatStatus(SeatStatusEnum.available));
-            booking.getTickets().forEach(ticket -> ticket.setTicketStatus(TicketStatusEnum.cancelled));
+            ticketRepository.deleteAll(booking.getTickets());
+            booking.getTickets().clear();
             logger.warn("Payment failed for booking code: {}", booking.getBookingCode());
         }
+
         seatRepository.saveAll(seats);
-        ticketRepository.saveAll(booking.getTickets());
         bookingRepository.save(booking);
+    }
+
+    @Scheduled(fixedRate = 300000) // Chạy mỗi 5 phút
+    @Transactional
+    public void cleanupFailedBookings() {
+        Instant fifteenMinutesAgo = Instant.now().minusSeconds(15 * 60); // 15 phút trước
+        List<Booking> failedBookings = bookingRepository.findByPaymentStatusAndDateBefore(
+            PaymentStatusEnum.pending, fifteenMinutesAgo);
+
+        for (Booking booking : failedBookings) {
+            logger.info("Cleaning up failed booking: {}", booking.getBookingCode());
+
+            // Tải lại booking với tickets để đảm bảo chúng được quản lý
+            Booking managedBooking = bookingRepository.findById(booking.getBookingId())
+                .orElseThrow(() -> new RuntimeException("Booking not found: " + booking.getBookingCode()));
+
+            // Chuyển ghế về available
+            List<Seat> seats = managedBooking.getTickets().stream()
+                .map(Ticket::getSeat)
+                .filter(seat -> seat != null)
+                .toList();
+            seats.forEach(seat -> seat.setSeatStatus(SeatStatusEnum.available));
+            seatRepository.saveAll(seats);
+
+            // Xóa tickets
+            ticketRepository.deleteAll(managedBooking.getTickets());
+            managedBooking.getTickets().clear();
+
+            // Xóa booking
+            bookingRepository.delete(managedBooking);
+            logger.info("Deleted failed booking: {}", managedBooking.getBookingCode());
+        }
     }
 
     public List<Booking> getBookingsByUser(String username) {
