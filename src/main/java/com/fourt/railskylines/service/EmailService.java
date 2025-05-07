@@ -62,23 +62,14 @@ public class EmailService {
 
         Context context = new Context();
         context.setVariable("name", username);
-        context.setVariable("jobs", value);
+        context.setVariable("code", value); // Changed from "jobs" to "code"
 
         String content = templateEngine.process(templateName, context);
         this.sendEmailSync(to, subject, content, false, true);
     }
 
-    // public void sendVerificationEmail(String toEmail, String code) {
-    // SimpleMailMessage message = new SimpleMailMessage();
-    // message.setFrom("tuyenbest1234@gmail.com");
-    // message.setTo(toEmail);
-    // message.setSubject("Welcome to Nice App! Confirm your Email");
-    // message.setText("Dear User,\n\nPlease use the following code to verify your
-    // email: " + code + "\n\nThank you!");
-    // mailSender.send(message);
-    // }
     public void sendVerificationEmail(String toEmail, String code) {
-        String subject = "Welcome to Nice App! Confirm your Email";
+        String subject = "Welcome to RailSkylines ! Confirm your Email";
         String templateName = "verification-email"; // Name of the .hbs file (without .hbs extension)
         String username = toEmail.split("@")[0]; // Extract username from email or use a default
         this.sendEmailFromTemplateSync(toEmail, subject, templateName, username, code);
