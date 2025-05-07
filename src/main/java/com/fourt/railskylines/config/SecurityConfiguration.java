@@ -51,6 +51,9 @@ public class SecurityConfiguration {
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
+                "/api/v1/auth/**",
+                "/api/v1/auth/verify-code",
+                "/api/v1/auth/verify-email"
         };
 
         http
@@ -64,6 +67,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/train-trips/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/articles/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
                                 .anyRequest().authenticated())
                 // .authorizeHttpRequests(authz -> authz

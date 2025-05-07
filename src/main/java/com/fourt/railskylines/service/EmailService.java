@@ -37,44 +37,50 @@ public class EmailService {
         this.mailSender.send(msg);
     }
 
-    // public void sendEmailSync(String to, String subject, String content, boolean
-    // isMultipart, boolean isHtml) {
-    // // Prepare message using a Spring helper
-    // MimeMessage mimeMessage = this.javaMailSender.createMimeMessage();
-    // try {
-    // MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart,
-    // StandardCharsets.UTF_8.name());
-    // message.setTo(to);
-    // message.setSubject(subject);
-    // message.setText(content, isHtml);
-    // this.javaMailSender.send(mimeMessage);
-    // } catch (MailException | MessagingException e) {
-    // System.out.println("ERROR SEND EMAIL: " + e);
+    public void sendEmailSync(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
+        // Prepare message using a Spring helper
+        MimeMessage mimeMessage = this.javaMailSender.createMimeMessage();
+        try {
+            MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart,
+                    StandardCharsets.UTF_8.name());
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(content, isHtml);
+            this.javaMailSender.send(mimeMessage);
+        } catch (MailException | MessagingException e) {
+            System.out.println("ERROR SEND EMAIL: " + e);
+        }
+    }
+
+    @Async
+    public void sendEmailFromTemplateSync(
+            String to,
+            String subject,
+            String templateName,
+            String username,
+            Object value) {
+
+        Context context = new Context();
+        context.setVariable("name", username);
+        context.setVariable("jobs", value);
+
+        String content = templateEngine.process(templateName, context);
+        this.sendEmailSync(to, subject, content, false, true);
+    }
+
+    // public void sendVerificationEmail(String toEmail, String code) {
+    // SimpleMailMessage message = new SimpleMailMessage();
+    // message.setFrom("tuyenbest1234@gmail.com");
+    // message.setTo(toEmail);
+    // message.setSubject("Welcome to Nice App! Confirm your Email");
+    // message.setText("Dear User,\n\nPlease use the following code to verify your
+    // email: " + code + "\n\nThank you!");
+    // mailSender.send(message);
     // }
-    // }
-
-    // @Async
-    // public void sendEmailFromTemplateSync(
-    // String to,
-    // String subject,
-    // String templateName,
-    // String username,
-    // Object value) {
-
-    // Context context = new Context();
-    // context.setVariable("name", username);
-    // context.setVariable("jobs", value);
-
-    // String content = templateEngine.process(templateName, context);
-    // this.sendEmailSync(to, subject, content, false, true);
-    // }
-
     public void sendVerificationEmail(String toEmail, String code) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("tuyenbest1234@gmail.com");
-        message.setTo(toEmail);
-        message.setSubject("Welcome to Nice App! Confirm your Email");
-        message.setText("Dear User,\n\nPlease use the following code to verify your email: " + code + "\n\nThank you!");
-        mailSender.send(message);
+        String subject = "Welcome to Nice App! Confirm your Email";
+        String templateName = "verification-email"; // Name of the .hbs file (without .hbs extension)
+        String username = toEmail.split("@")[0]; // Extract username from email or use a default
+        this.sendEmailFromTemplateSync(toEmail, subject, templateName, username, code);
     }
 }

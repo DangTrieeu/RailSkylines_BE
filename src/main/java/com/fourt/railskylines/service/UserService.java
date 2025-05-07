@@ -78,8 +78,8 @@ public class UserService {
         String newCode = CodeUtil.generateVerificationCode();
         user.setCode(newCode);
         user.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes expiration
-        userRepository.save(user);
         this.mailService.sendVerificationEmail(user.getEmail(), newCode);
+        this.userRepository.save(user);
     }
 
     // verify code
