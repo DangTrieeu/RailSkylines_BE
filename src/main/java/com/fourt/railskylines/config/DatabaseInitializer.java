@@ -339,6 +339,9 @@ public class DatabaseInitializer implements CommandLineRunner {
             arr.add(new Permission("Get a user by id", "/api/v1/users/{id}", "GET", "USERS"));
             arr.add(new Permission("Get users with pagination", "/api/v1/users", "GET", "USERS"));
 
+            // Revenue Permissions
+            arr.add(new Permission("Get total revenue", "/api/v1/total", "GET", "REVENUE"));
+
             this.permissionRepository.saveAll(arr);
         }
 
