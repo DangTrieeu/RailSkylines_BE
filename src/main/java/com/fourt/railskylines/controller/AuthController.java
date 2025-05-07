@@ -19,15 +19,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
+import com.fourt.railskylines.domain.Role;
 import com.fourt.railskylines.domain.User;
 import com.fourt.railskylines.domain.request.ReqLoginDTO;
 import com.fourt.railskylines.domain.response.ResCreateUserDTO;
 import com.fourt.railskylines.domain.response.ResLoginDTO;
+import com.fourt.railskylines.domain.response.VerifyCodeDTO;
+import com.fourt.railskylines.domain.response.VerifyEmailDTO;
 import com.fourt.railskylines.service.UserService;
 import com.fourt.railskylines.util.SecurityUtil;
 import com.fourt.railskylines.util.annotation.APIMessage;
 import com.fourt.railskylines.util.error.IdInvalidException;
-
 
 @RestController
 @RequestMapping("/api/v1")
@@ -36,7 +38,7 @@ public class AuthController {
     private final SecurityUtil securityUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    
+
     @Value("${railskylines.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
@@ -98,6 +100,7 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, resCookies.toString())
                 .body(res);
     }
+
     @GetMapping("/auth/account")
     @APIMessage("fetch account")
     public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
@@ -211,7 +214,22 @@ public class AuthController {
 
         String hashPassword = this.passwordEncoder.encode(postManUser.getPassword());
         postManUser.setPassword(hashPassword);
+
         User user = this.userService.handleCreateNewUser(postManUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResCreateUserDTO(user));
+    }
+
+    @PostMapping("/auth/verify-code")
+    public ResponseEntity<String> verifyCode(@Valid @RequestBody VerifyCodeDTO verifyCodeDTO)
+            throws IdInvalidException {
+        this.userService.verifyCode(verifyCodeDTO);
+        return ResponseEntity.ok("Verification successful");
+    }
+
+    @PostMapping("/auth/verify-email")
+    public ResponseEntity<String> verifyEmail(@Valid @RequestBody VerifyEmailDTO verifyEmailDTO)
+            throws IdInvalidException {
+        this.userService.verifyEmail(verifyEmailDTO);
+        return ResponseEntity.ok("Verification code sent");
     }
 }

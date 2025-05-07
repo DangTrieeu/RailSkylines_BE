@@ -60,6 +60,13 @@ public class User {
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
     private List<Ticket> tickets;
 
+    // verify code
+    private boolean status;
+
+    private Instant codeExpired;
+
+    private String code;
+
     @PrePersist
     public void handleBeforeCreate() {
         this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true

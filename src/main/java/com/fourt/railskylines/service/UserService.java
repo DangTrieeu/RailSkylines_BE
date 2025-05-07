@@ -1,5 +1,6 @@
 package com.fourt.railskylines.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -7,22 +8,35 @@ import java.util.stream.Collectors;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.fourt.railskylines.domain.Role;
 import com.fourt.railskylines.domain.User;
 import com.fourt.railskylines.domain.response.ResCreateUserDTO;
 import com.fourt.railskylines.domain.response.ResUpdateUserDTO;
 import com.fourt.railskylines.domain.response.ResUserDTO;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.VerifyCodeDTO;
+import com.fourt.railskylines.domain.response.VerifyEmailDTO;
 import com.fourt.railskylines.domain.response.ResUserDTO.RoleUser;
+import com.fourt.railskylines.repository.RoleRepository;
 import com.fourt.railskylines.repository.UserRepository;
+import com.fourt.railskylines.util.CodeUtil;
+import com.fourt.railskylines.util.error.IdInvalidException;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final EmailService mailService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository,
+
+            EmailService mailService) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.mailService = mailService;
     }
 
     // Check if the email exists in the database
@@ -30,12 +44,45 @@ public class UserService {
         return this.userRepository.existsByEmail(email);
     }
 
-    // CRUD
-    // Create a new user
     public User handleCreateNewUser(User newUser) {
-        return this.userRepository.save(newUser);
+        Role normalUserRole = roleRepository.findByName("NORMAL_USER");
+        if (normalUserRole != null) {
+            newUser.setRole(normalUserRole);
+        }
+        newUser.setStatus(false);
+        newUser.setCode(CodeUtil.generateVerificationCode());
+        newUser.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes expiration
+        User savedUser = userRepository.save(newUser);
+        mailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getCode());
+        return savedUser;
     }
 
+    public void verifyCode(VerifyCodeDTO verifyCodeDTO) throws IdInvalidException {
+        User user = userRepository.findByEmail(verifyCodeDTO.getEmail());
+
+        if (!user.getCode().equals(verifyCodeDTO.getCode())) {
+            throw new IdInvalidException(
+                    "Verification code " + verifyCodeDTO.getCode() + " is not correct, please try again");
+        }
+
+        if (user.getCodeExpired().isBefore(Instant.now())) {
+            throw new IdInvalidException("Verification code has expired, please request a new one");
+        }
+
+        user.setStatus(true);
+        userRepository.save(user);
+    }
+
+    public void verifyEmail(VerifyEmailDTO verifyEmailDTO) throws IdInvalidException {
+        User user = userRepository.findByEmail(verifyEmailDTO.getEmail());
+        String newCode = CodeUtil.generateVerificationCode();
+        user.setCode(newCode);
+        user.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes expiration
+        userRepository.save(user);
+        this.mailService.sendVerificationEmail(user.getEmail(), newCode);
+    }
+
+    // verify code
     // Fetch user by id
     public User handleFetchUserById(long id) {
         Optional<User> userOptional = this.userRepository.findById(id);
@@ -114,6 +161,7 @@ public class UserService {
         res.setPhoneNumber(user.getPhoneNumber());
         res.setAvatar(user.getAvatar());
         res.setCreatedAt(user.getCreatedAt());
+        res.setCodeExpired(user.getCodeExpired());
         return res;
     }
 
