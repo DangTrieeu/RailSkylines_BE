@@ -13,8 +13,8 @@ COPY src ./src
 # Cấp quyền thực thi cho Gradle Wrapper
 RUN chmod +x gradlew
 
-# Build ứng dụng, bỏ qua test để tối ưu thời gian
-RUN ./gradlew build -x test
+# Xóa cache và build ứng dụng, bỏ qua test
+RUN ./gradlew clean build -x test
 
 # Giai đoạn 2: Tạo image chạy ứng dụng
 FROM openjdk:21-jdk-slim
@@ -22,8 +22,8 @@ FROM openjdk:21-jdk-slim
 # Thiết lập thư mục làm việc
 WORKDIR /app
 
-# Sao chép file JAR từ giai đoạn build
-COPY --from=builder /app/build/libs/fourt-0.0.1-SNAPSHOT.jar app.jar
+# Sao chép file JAR chính từ giai đoạn build
+COPY --from=builder /app/build/libs/railskylines-0.0.1-SNAPSHOT.jar app.jar
 
 # Mở cổng 8080 cho ứng dụng Spring Boot
 EXPOSE 8080
