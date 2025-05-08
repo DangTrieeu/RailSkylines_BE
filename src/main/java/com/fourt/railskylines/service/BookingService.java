@@ -5,10 +5,11 @@ import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.domain.request.TicketRequestDTO;
 import com.fourt.railskylines.domain.response.PaymentDTO;
 import com.fourt.railskylines.repository.*;
+import com.fourt.railskylines.util.constant.CustomerObjectEnum;
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
+import com.fourt.railskylines.util.constant.PromotionStatusEnum;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.TicketStatusEnum;
-import com.fourt.railskylines.util.VNPayUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,6 +52,28 @@ public class BookingService {
         this.objectMapper = objectMapper;
     }
 
+    // Calculate discount multiplier based on customer object
+    private double getCustomerDiscountMultiplier(CustomerObjectEnum customerObject) {
+        if (customerObject == null) {
+            return 1.0; // No discount if customerObject is null
+        }
+        switch (customerObject) {
+            case children:
+                return 0.5; // 50% discount
+            case student:
+                return 0.85; // 15% discount
+            case elderly:
+                return 0.5; // 50% discount
+            case veteran:
+                return 0.0; // 100% discount
+            case disabled:
+                return 0.2; // 80% discount
+            case adult:
+            default:
+                return 1.0; // No discount
+        }
+    }
+
     @Transactional
     public Booking createBooking(BookingRequestDTO request, HttpServletRequest httpServletRequest) {
         // 1. Kiểm tra ghế
@@ -80,7 +103,7 @@ public class BookingService {
                     Long seatNumber = ((Number) seatNumberObj).longValue();
                     Double priceFromParam = ((Number) priceObj).doubleValue();
 
-                    logger.info("Checking seat: dbSeatId={}, dbPrice={}, paramSeatNumber={}, paramPrice={}", 
+                    logger.info("Checking seat: dbSeatId={}, dbPrice={}, paramSeatNumber={}, paramPrice={}",
                         seats.get(i).getSeatId(), seats.get(i).getPrice(), seatNumber, priceFromParam);
 
                     if (seats.get(i).getSeatId() != seatNumber || seats.get(i).getPrice() != priceFromParam) {
@@ -94,84 +117,102 @@ public class BookingService {
         }
 
         // 2. Khóa ghế
-        seats.forEach(seat -> seat.setSeatStatus(SeatStatusEnum.pending));
-        seatRepository.saveAll(seats);
+        try {
+            seats.forEach(seat -> seat.setSeatStatus(SeatStatusEnum.pending));
+            seatRepository.saveAll(seats);
 
-        // 3. Tạo Booking
-        Booking booking = new Booking();
-        booking.setPaymentStatus(PaymentStatusEnum.pending);
-        booking.setContactEmail(request.getContactEmail());
-        booking.setContactPhone(request.getContactPhone());
-        booking.setDate(Instant.now());
-        booking.setPaymentType(request.getPaymentType());
-        booking.setVnpTxnRef(booking.getBookingCode());
+            // 3. Tạo Booking
+            Booking booking = new Booking();
+            booking.setPaymentStatus(PaymentStatusEnum.pending);
+            booking.setContactEmail(request.getContactEmail());
+            booking.setContactPhone(request.getContactPhone());
+            booking.setDate(Instant.now());
+            booking.setPaymentType(request.getPaymentType());
+            booking.setVnpTxnRef(booking.getBookingCode());
 
-        if (request.getUserId() != null) {
-            User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            booking.setUser(user);
-        }
-        booking = bookingRepository.save(booking);
-
-        // 4. Tạo Ticket
-        List<Ticket> tickets = new ArrayList<>();
-        for (int i = 0; i < request.getTickets().size(); i++) {
-            TicketRequestDTO ticketDTO = request.getTickets().get(i);
-            Ticket ticket = new Ticket();
-            ticket.setBooking(booking);
-            ticket.setSeat(seats.get(i));
-            ticket.setCustomerObject(ticketDTO.getCustomerObject());
-            ticket.setName(ticketDTO.getName());
-            ticket.setCitizenId(ticketDTO.getCitizenId());
-            ticket.setPrice(seats.get(i).getPrice());
-            ticket.setTrainTrip(seats.get(i).getTrainTrip());
-            ticket.setOwner(booking.getUser());
-            ticket.setTicketStatus(TicketStatusEnum.issued);
-            tickets.add(ticket);
-        }
-        ticketRepository.saveAll(tickets);
-
-        // 5. Áp dụng khuyến mãi
-        double totalPrice = tickets.stream().mapToDouble(Ticket::getPrice).sum();
-        logger.info("Total price before discount: {}", totalPrice);
-        if (request.getPromotionIds() != null && !request.getPromotionIds().isEmpty()) {
-            List<Promotion> promotions = promotionRepository.findByPromotionIdIn(request.getPromotionIds());
-            if (promotions.size() != request.getPromotionIds().size()) {
-                logger.warn("Some promotions not found: requested {}, found {}", request.getPromotionIds().size(),
-                        promotions.size());
+            if (request.getUserId() != null) {
+                User user = userRepository.findById(request.getUserId())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+                booking.setUser(user);
             }
-            double discount = promotions.stream().mapToDouble(Promotion::getDiscount).sum();
-            logger.info("Applied discount: {}", discount);
-            totalPrice -= discount;
-            booking.setPromotions(promotions);
+            booking = bookingRepository.save(booking);
+
+            // 4. Tạo Ticket và áp dụng giảm giá theo customerObject
+            List<Ticket> tickets = new ArrayList<>();
+            for (int i = 0; i < request.getTickets().size(); i++) {
+                TicketRequestDTO ticketDTO = request.getTickets().get(i);
+                Ticket ticket = new Ticket();
+                ticket.setBooking(booking);
+                ticket.setSeat(seats.get(i));
+                ticket.setCustomerObject(ticketDTO.getCustomerObject());
+                ticket.setName(ticketDTO.getName());
+                ticket.setCitizenId(ticketDTO.getCitizenId());
+                // Áp dụng giảm giá theo customerObject
+                double basePrice = seats.get(i).getPrice();
+                double discountMultiplier = getCustomerDiscountMultiplier(ticketDTO.getCustomerObject());
+                double discountedPrice = basePrice * discountMultiplier;
+                ticket.setPrice(discountedPrice);
+                logger.info("Ticket for {}: basePrice={}, discountMultiplier={}, discountedPrice={}",
+                    ticketDTO.getName(), basePrice, discountMultiplier, discountedPrice);
+                ticket.setTrainTrip(seats.get(i).getTrainTrip());
+                ticket.setOwner(booking.getUser());
+                ticket.setTicketStatus(TicketStatusEnum.issued);
+                tickets.add(ticket);
+            }
+            ticketRepository.saveAll(tickets);
+
+            // 5. Tính tổng giá và áp dụng khuyến mãi
+            double totalPrice = tickets.stream().mapToDouble(Ticket::getPrice).sum();
+            logger.info("Total price before promotion: {}", totalPrice);
+            if (request.getPromotionId() != null) {
+                Promotion promotion = promotionRepository.findById(request.getPromotionId())
+                        .orElseThrow(() -> new RuntimeException("Promotion not found: " + request.getPromotionId()));
+                // Validate promotion
+                if (promotion.getValidity().isBefore(Instant.now())) {
+                    throw new RuntimeException("Promotion " + promotion.getPromotionCode() + " has expired");
+                }
+                if (promotion.getStatus() != PromotionStatusEnum.active) {
+                    throw new RuntimeException("Promotion " + promotion.getPromotionCode() + " is not active");
+                }
+                double discount = promotion.getDiscount();
+                logger.info("Applied promotion discount: {}", discount);
+                totalPrice -= discount;
+                booking.setPromotion(promotion);
+            }
+            if (totalPrice < 0) totalPrice = 0;
+            booking.setTotalPrice(totalPrice);
+            logger.info("Total price after promotion: {}", totalPrice);
+
+            // 6. Lưu booking
+            bookingRepository.save(booking);
+
+            logger.info("Booking created successfully with code: {}", booking.getBookingCode());
+            return booking;
+        } catch (Exception e) {
+            // Rollback seat status
+            seats.forEach(seat -> seat.setSeatStatus(SeatStatusEnum.available));
+            seatRepository.saveAll(seats);
+            logger.error("Booking creation failed: {}", e.getMessage(), e);
+            throw e;
         }
-        if (totalPrice < 0) totalPrice = 0;
-        booking.setTotalPrice(totalPrice);
-        logger.info("Total price after discount: {}", totalPrice);
-
-        // 6. Lưu tạm thời
-        bookingRepository.save(booking);
-
-        logger.info("Booking created successfully with code: {}", booking.getBookingCode());
-        return booking;
     }
 
     public String getPaymentUrl(Booking booking, HttpServletRequest httpServletRequest) {
         long amount = (long) booking.getTotalPrice();
         String bankCode = "NCB";
         httpServletRequest.setAttribute("txnRef", booking.getBookingCode());
-    
+
         PaymentDTO.VNPayResponse vnPayResponse = paymentService.createVnPayPayment(httpServletRequest, amount, bankCode, booking.getBookingCode());
-    
+
         if (!"ok".equals(vnPayResponse.getCode())) {
             logger.error("Failed to generate payment URL: {}", vnPayResponse.getMessage());
             throw new RuntimeException("Failed to generate payment URL: " + vnPayResponse.getMessage());
         }
-    
+
         String paymentUrl = vnPayResponse.getPaymentUrl();
         booking.setVnpTxnRef(booking.getBookingCode());
         bookingRepository.save(booking);
-    
+
         logger.info("Payment URL generated successfully: {}", paymentUrl);
         return paymentUrl;
     }

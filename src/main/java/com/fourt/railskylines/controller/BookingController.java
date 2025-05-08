@@ -39,7 +39,7 @@ public class BookingController {
         List<Long> seatIds = new ArrayList<>();
         for (Map<String, Object> ticket : tickets) {
             Long seatNumber = ((Number) ticket.get("seatNumber")).longValue();
-            seatIds.add(seatNumber); // Đảm bảo seatNumber là Long
+            seatIds.add(seatNumber);
         }
 
         // Kiểm tra thủ công seatIds không rỗng
@@ -75,6 +75,11 @@ public class BookingController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
+        // Validate promotionId
+        if (request.getPromotionId() != null) {
+            // Optional: Add additional validation if needed
+        }
+
         // Tạo booking
         Booking booking = bookingService.createBooking(request, httpServletRequest);
 
@@ -93,7 +98,7 @@ public class BookingController {
 
     @GetMapping("/bookings/history")
     public ResponseEntity<RestResponse<List<Booking>>> getBookingHistory(HttpServletRequest httpServletRequest) {
-        String username = httpServletRequest.getRemoteUser(); // Giả sử sử dụng Spring Security
+        String username = httpServletRequest.getRemoteUser();
         if (username == null) {
             throw new RuntimeException("User not authenticated");
         }

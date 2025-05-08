@@ -20,7 +20,7 @@ public class BookingRequestDTO {
 
     private String contactPhone;
 
-    private List<Long> promotionIds;
+    private Long promotionId;
     
     @NotEmpty
     private List<TicketRequestDTO> tickets;

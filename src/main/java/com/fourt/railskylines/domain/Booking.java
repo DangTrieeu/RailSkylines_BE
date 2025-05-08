@@ -14,8 +14,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -55,7 +54,7 @@ public class Booking {
     @Column(name = "vnp_txn_ref", nullable = true)
     private String vnpTxnRef;
 
-    @Column(name = "payment_type") // Thêm trường paymentType
+    @Column(name = "payment_type")
     private String paymentType;
 
     @ManyToOne
@@ -71,9 +70,9 @@ public class Booking {
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets;
 
-    @ManyToMany
-    @JoinTable(name = "booking_promotion", joinColumns = @JoinColumn(name = "booking_id"), inverseJoinColumns = @JoinColumn(name = "promotion_id"))
-    private List<Promotion> promotions;
+    @ManyToOne
+    @JoinColumn(name = "promotion_id", nullable = true)
+    private Promotion promotion;
 
     @PrePersist
     public void prePersist() {
