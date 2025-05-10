@@ -71,7 +71,8 @@ public class BookingService {
                     Object priceObj = ticketParam.get("price");
 
                     if (!(seatNumberObj instanceof Number)) {
-                        throw new RuntimeException("Invalid seatNumber for ticket at index " + i + ": " + seatNumberObj);
+                        throw new RuntimeException(
+                                "Invalid seatNumber for ticket at index " + i + ": " + seatNumberObj);
                     }
                     if (!(priceObj instanceof Number)) {
                         throw new RuntimeException("Invalid price for ticket at index " + i + ": " + priceObj);
@@ -80,8 +81,8 @@ public class BookingService {
                     Long seatNumber = ((Number) seatNumberObj).longValue();
                     Double priceFromParam = ((Number) priceObj).doubleValue();
 
-                    logger.info("Checking seat: dbSeatId={}, dbPrice={}, paramSeatNumber={}, paramPrice={}", 
-                        seats.get(i).getSeatId(), seats.get(i).getPrice(), seatNumber, priceFromParam);
+                    logger.info("Checking seat: dbSeatId={}, dbPrice={}, paramSeatNumber={}, paramPrice={}",
+                            seats.get(i).getSeatId(), seats.get(i).getPrice(), seatNumber, priceFromParam);
 
                     if (seats.get(i).getSeatId() != seatNumber || seats.get(i).getPrice() != priceFromParam) {
                         throw new RuntimeException("Price or seat mismatch for seat " + seatNumber);
@@ -145,7 +146,8 @@ public class BookingService {
             totalPrice -= discount;
             booking.setPromotions(promotions);
         }
-        if (totalPrice < 0) totalPrice = 0;
+        if (totalPrice < 0)
+            totalPrice = 0;
         booking.setTotalPrice(totalPrice);
         logger.info("Total price after discount: {}", totalPrice);
 
@@ -160,18 +162,19 @@ public class BookingService {
         long amount = (long) booking.getTotalPrice();
         String bankCode = "NCB";
         httpServletRequest.setAttribute("txnRef", booking.getBookingCode());
-    
-        PaymentDTO.VNPayResponse vnPayResponse = paymentService.createVnPayPayment(httpServletRequest, amount, bankCode, booking.getBookingCode());
-    
+
+        PaymentDTO.VNPayResponse vnPayResponse = paymentService.createVnPayPayment(httpServletRequest, amount, bankCode,
+                booking.getBookingCode());
+
         if (!"ok".equals(vnPayResponse.getCode())) {
             logger.error("Failed to generate payment URL: {}", vnPayResponse.getMessage());
             throw new RuntimeException("Failed to generate payment URL: " + vnPayResponse.getMessage());
         }
-    
+
         String paymentUrl = vnPayResponse.getPaymentUrl();
         booking.setVnpTxnRef(booking.getBookingCode());
         bookingRepository.save(booking);
-    
+
         logger.info("Payment URL generated successfully: {}", paymentUrl);
         return paymentUrl;
     }
@@ -217,20 +220,20 @@ public class BookingService {
     public void cleanupFailedBookings() {
         Instant fifteenMinutesAgo = Instant.now().minusSeconds(15 * 60); // 15 phút trước
         List<Booking> failedBookings = bookingRepository.findByPaymentStatusAndDateBefore(
-            PaymentStatusEnum.pending, fifteenMinutesAgo);
+                PaymentStatusEnum.pending, fifteenMinutesAgo);
 
         for (Booking booking : failedBookings) {
             logger.info("Cleaning up failed booking: {}", booking.getBookingCode());
 
             // Tải lại booking với tickets để đảm bảo chúng được quản lý
             Booking managedBooking = bookingRepository.findById(booking.getBookingId())
-                .orElseThrow(() -> new RuntimeException("Booking not found: " + booking.getBookingCode()));
+                    .orElseThrow(() -> new RuntimeException("Booking not found: " + booking.getBookingCode()));
 
             // Chuyển ghế về available
             List<Seat> seats = managedBooking.getTickets().stream()
-                .map(Ticket::getSeat)
-                .filter(seat -> seat != null)
-                .toList();
+                    .map(Ticket::getSeat)
+                    .filter(seat -> seat != null)
+                    .toList();
             seats.forEach(seat -> seat.setSeatStatus(SeatStatusEnum.available));
             seatRepository.saveAll(seats);
 

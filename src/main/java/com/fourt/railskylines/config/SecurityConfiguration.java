@@ -53,11 +53,11 @@ public class SecurityConfiguration {
                 "/swagger-ui.html",
                 "/api/v1/auth/**",
                 "/api/v1/auth/verify-code",
-                "/api/v1/auth/verify-email"
+                "/api/v1/auth/verify-email",
                 "/api/v1/vn-pay",
                 "/api/v1/bookings", // Thêm endpoint này
                 "/api/v1/bookings/**",
-                
+
         };
 
         http
