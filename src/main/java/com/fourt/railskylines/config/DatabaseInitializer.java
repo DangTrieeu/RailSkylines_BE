@@ -256,11 +256,12 @@ public class DatabaseInitializer implements CommandLineRunner {
                 if (countUsers == 0) {
                         // Admin User
                         User adminUser = new User();
-                        adminUser.setEmail("admin@railskylines.com");
+                        adminUser.setEmail("tuyenbest1234@gmail.com");
                         adminUser.setFullName("Super Admin");
                         adminUser.setPassword(this.passwordEncoder.encode("20102007"));
                         adminUser.setCreatedAt(Instant.now());
                         adminUser.setCreatedBy("system");
+                        adminUser.setStatus(true);
 
                         Role adminRole = this.roleRepository.findByName("SUPER_ADMIN");
                         if (adminRole != null) {
@@ -274,6 +275,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                         normalUser.setPassword(this.passwordEncoder.encode("20102007"));
                         normalUser.setCreatedAt(Instant.now());
                         normalUser.setCreatedBy("system");
+                        normalUser.setStatus(true);
 
                         Role normalUserRole = this.roleRepository.findByName("NORMAL_USER");
                         if (normalUserRole != null) {

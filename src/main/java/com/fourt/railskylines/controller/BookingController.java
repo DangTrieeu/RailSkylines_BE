@@ -1,5 +1,6 @@
 package com.fourt.railskylines.controller;
 
+import com.fourt.railskylines.domain.response.BookingResponseDTO;
 import com.fourt.railskylines.domain.response.RestResponse;
 import com.fourt.railskylines.domain.Booking;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
@@ -59,7 +60,8 @@ public class BookingController {
         if (seatIds.size() != request.getTickets().size()) {
             RestResponse<String> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé (" + request.getTickets().size() + ")");
+            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé ("
+                    + request.getTickets().size() + ")");
             response.setData(null);
             response.setError("Invalid request");
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -106,5 +108,26 @@ public class BookingController {
         response.setError(null);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/bookings/{bookingId}")
+    public ResponseEntity<RestResponse<BookingResponseDTO>> getBookingById(
+            @PathVariable("bookingId") String bookingId) {
+        try {
+            BookingResponseDTO booking = bookingService.getBookingById(bookingId);
+            RestResponse<BookingResponseDTO> response = new RestResponse<>();
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("Booking retrieved successfully");
+            response.setData(booking);
+            response.setError(null);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            RestResponse<BookingResponseDTO> response = new RestResponse<>();
+            response.setStatusCode(HttpStatus.NOT_FOUND.value());
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            response.setError("Booking not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
     }
 }

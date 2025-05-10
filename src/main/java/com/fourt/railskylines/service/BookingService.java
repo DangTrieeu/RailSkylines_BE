@@ -3,7 +3,9 @@ package com.fourt.railskylines.service;
 import com.fourt.railskylines.domain.*;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.domain.request.TicketRequestDTO;
+import com.fourt.railskylines.domain.response.BookingResponseDTO;
 import com.fourt.railskylines.domain.response.PaymentDTO;
+import com.fourt.railskylines.domain.response.TicketResponseDTO;
 import com.fourt.railskylines.repository.*;
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
@@ -219,7 +222,7 @@ public class BookingService {
     @Transactional
     public void cleanupFailedBookings() {
         Instant fifteenMinutesAgo = Instant.now().minusSeconds(15 * 60); // 15 phút trước
-        List<Booking> failedBookings = bookingRepository.findByPaymentStatusAndDateBefore(
+        List<Booking> failedBookings = this.bookingRepository.findByPaymentStatusAndDateBefore(
                 PaymentStatusEnum.pending, fifteenMinutesAgo);
 
         for (Booking booking : failedBookings) {
@@ -253,5 +256,78 @@ public class BookingService {
             throw new RuntimeException("User not found");
         }
         return bookingRepository.findByUser(user);
+    }
+
+    public BookingResponseDTO getBookingById(String bookingId) {
+        Optional<Booking> bookingOpt = bookingRepository.findByVnpTxnRef(bookingId);
+        if (bookingOpt.isEmpty()) {
+            logger.error("Booking not found for booking ID: {}", bookingId);
+            throw new RuntimeException("Booking not found for booking ID: " + bookingId);
+        }
+        Booking booking = bookingOpt.get();
+
+        // Fetch tickets directly from repository
+        List<Ticket> tickets = this.ticketRepository.findByBooking(booking);
+        logger.info("Fetched booking ID: {}, bookingCode: {}, ticket count: {}",
+                bookingId, booking.getBookingCode(), tickets.size());
+
+        // Map to BookingResponseDTO
+        BookingResponseDTO responseDTO = new BookingResponseDTO();
+        responseDTO.setBookingId(booking.getBookingId());
+        responseDTO.setBookingCode(booking.getBookingCode());
+        responseDTO.setDate(booking.getDate());
+        responseDTO.setPaymentStatus(booking.getPaymentStatus());
+        responseDTO.setTotalPrice(booking.getTotalPrice());
+        responseDTO.setPayAt(booking.getPayAt());
+        responseDTO.setTransactionId(booking.getTransactionId());
+        responseDTO.setVnpTxnRef(booking.getVnpTxnRef());
+        responseDTO.setPaymentType(booking.getPaymentType());
+        responseDTO.setContactEmail(booking.getContactEmail());
+        responseDTO.setContactPhone(booking.getContactPhone());
+
+        // Map tickets to TicketResponseDTO
+        List<TicketResponseDTO> ticketDTOs = tickets.stream().map(ticket -> {
+            TicketResponseDTO ticketDTO = new TicketResponseDTO();
+            ticketDTO.setTicketId(ticket.getTicketId());
+            ticketDTO.setCustomerObject(ticket.getCustomerObject());
+            ticketDTO.setTicketCode(ticket.getTicketCode());
+            ticketDTO.setName(ticket.getName());
+            ticketDTO.setCitizenId(ticket.getCitizenId());
+            ticketDTO.setPrice(ticket.getPrice());
+            ticketDTO.setStartDay(ticket.getStartDay());
+            ticketDTO.setTicketStatus(ticket.getTicketStatus());
+
+            // Map Seat
+            TicketResponseDTO.SeatDTO seatDTO = new TicketResponseDTO.SeatDTO();
+            seatDTO.setSeatId(ticket.getSeat().getSeatId());
+            seatDTO.setPrice(ticket.getSeat().getPrice());
+            seatDTO.setSeatStatus(ticket.getSeat().getSeatStatus().name());
+            ticketDTO.setSeat(seatDTO);
+
+            // Map TrainTrip
+            TicketResponseDTO.TrainTripDTO trainTripDTO = new TicketResponseDTO.TrainTripDTO();
+            trainTripDTO.setTrainTripId(ticket.getTrainTrip().getTrainTripId());
+
+            // Map Train
+            TicketResponseDTO.TrainTripDTO.TrainDTO trainDTO = new TicketResponseDTO.TrainTripDTO.TrainDTO();
+            trainDTO.setTrainId(ticket.getTrainTrip().getTrain().getTrainId());
+            trainDTO.setTrainName(ticket.getTrainTrip().getTrain().getTrainName());
+            trainTripDTO.setTrain(trainDTO);
+
+            ticketDTO.setTrainTrip(trainTripDTO);
+            return ticketDTO;
+        }).collect(Collectors.toList());
+        responseDTO.setTickets(ticketDTOs);
+
+        // Map Promotions
+        List<BookingResponseDTO.PromotionDTO> promotionDTOs = booking.getPromotions().stream().map(promotion -> {
+            BookingResponseDTO.PromotionDTO promotionDTO = new BookingResponseDTO.PromotionDTO();
+            promotionDTO.setPromotionId(promotion.getPromotionId());
+            promotionDTO.setDiscount(promotion.getDiscount());
+            return promotionDTO;
+        }).collect(Collectors.toList());
+        responseDTO.setPromotions(promotionDTOs);
+
+        return responseDTO;
     }
 }

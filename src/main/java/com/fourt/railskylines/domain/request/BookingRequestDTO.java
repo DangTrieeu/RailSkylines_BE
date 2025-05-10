@@ -21,7 +21,7 @@ public class BookingRequestDTO {
     private String contactPhone;
 
     private List<Long> promotionIds;
-    
+
     @NotEmpty
     private List<TicketRequestDTO> tickets;
 

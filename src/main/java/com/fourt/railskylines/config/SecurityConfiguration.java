@@ -57,6 +57,7 @@ public class SecurityConfiguration {
                 "/api/v1/vn-pay",
                 "/api/v1/bookings", // Thêm endpoint này
                 "/api/v1/bookings/**",
+                "/api/v1/callback/**",
 
         };
 

@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 
 import jakarta.persistence.CascadeType;
@@ -69,6 +71,8 @@ public class Booking {
     private String contactPhone;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    // @JsonManagedReference
     private List<Ticket> tickets;
 
     @ManyToMany
