@@ -52,69 +52,6 @@ public class PaymentController {
         return response;
     }
 
-    // @GetMapping("/callback")
-    // public RestResponse<PaymentResponse> payCallbackHandler(HttpServletRequest
-    // request) {
-    // // Validate VNPay secure hash
-    // String vnpSecureHash = request.getParameter("vnp_SecureHash");
-    // Map<String, String> vnpParams = new HashMap<>();
-    // for (String paramName : request.getParameterMap().keySet()) {
-    // if (!paramName.equals("vnp_SecureHash")) {
-    // vnpParams.put(paramName, request.getParameter(paramName));
-    // }
-    // }
-    // String hashData = VNPayUtil.getPaymentURL(vnpParams, false);
-    // String calculatedHash = VNPayUtil.hmacSHA512(vnPayConfig.getSecretKey(),
-    // hashData);
-
-    // if (!calculatedHash.equals(vnpSecureHash)) {
-    // RestResponse<PaymentResponse> response = new RestResponse<>();
-    // PaymentResponse paymentResponse = new PaymentResponse();
-    // paymentResponse.setSuccess(false);
-    // paymentResponse.setMessage("Invalid secure hash");
-    // response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-    // response.setMessage("Failed");
-    // response.setError("Invalid secure hash");
-    // response.setData(paymentResponse);
-    // return response;
-    // }
-
-    // String status = request.getParameter("vnp_ResponseCode");
-    // String txnRef = request.getParameter("vnp_TxnRef");
-    // String transactionNo = request.getParameter("vnp_TransactionNo");
-
-    // PaymentResponse paymentResponse = new PaymentResponse();
-    // RestResponse<PaymentResponse> response = new RestResponse<>();
-
-    // boolean success = "00".equals(status);
-    // bookingService.updateBookingPaymentStatus(txnRef, success, transactionNo);
-
-    // if (success) {
-    // paymentResponse.setSuccess(true);
-    // paymentResponse.setTransactionId(transactionNo);
-    // paymentResponse.setTxnRef(txnRef);
-    // paymentResponse.setMessage("Payment successful. Transaction ID: " +
-    // transactionNo +
-    // ", Booking ID: " + txnRef);
-
-    // response.setStatusCode(HttpStatus.OK.value());
-    // response.setMessage("Success");
-    // response.setError(null);
-    // response.setData(paymentResponse);
-    // } else {
-    // paymentResponse.setSuccess(false);
-    // paymentResponse.setTransactionId(null);
-    // paymentResponse.setTxnRef(null);
-    // paymentResponse.setMessage("Payment failed. Response Code: " + status);
-
-    // response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-    // response.setMessage("Failed");
-    // response.setError("Payment failed");
-    // response.setData(paymentResponse);
-    // }
-
-    // return response;
-    // }
     @GetMapping("/callback")
     public ResponseEntity<Void> payCallbackHandler(HttpServletRequest request) {
         // Validate VNPay secure hash
