@@ -3,7 +3,6 @@ package com.fourt.railskylines.domain;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Entity;
 
@@ -26,10 +25,6 @@ public class Station {
     private long stationId;
     private String stationName;
     private double position;
-
-    // @ManyToMany(mappedBy = "journey")
-    // @JsonIgnoreProperties(value = { "stations" })
-    // private List<Route> routes;
 
     @ManyToMany(mappedBy = "journey")
     @JsonIgnore

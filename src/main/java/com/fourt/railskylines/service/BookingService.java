@@ -253,7 +253,7 @@ public class BookingService {
         bookingRepository.save(booking);
     }
 
-    @Scheduled(fixedRate = 300000) // Chạy mỗi 5 phút
+    @Scheduled(fixedRate = 30000) // Chạy mỗi 5 phút
     @Transactional
     public void cleanupFailedBookings() {
         Instant fifteenMinutesAgo = Instant.now().minusSeconds(15 * 60); // 15 phút trước
