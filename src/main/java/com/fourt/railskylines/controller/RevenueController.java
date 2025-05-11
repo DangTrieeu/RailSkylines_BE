@@ -1,7 +1,7 @@
 package com.fourt.railskylines.controller;
 
 import com.fourt.railskylines.domain.response.ResRevenueDTO;
-import com.fourt.railskylines.domain.RestResponse;
+import com.fourt.railskylines.domain.response.RestResponse;
 import com.fourt.railskylines.service.RevenueService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
