@@ -58,7 +58,8 @@ public class SecurityConfiguration {
                 "/api/v1/bookings", // Thêm endpoint này
                 "/api/v1/bookings/**",
                 "/api/v1/callback/**",
-                "/api/v1/tickets/**"
+                "/api/v1/tickets/**",
+                "/api/v1/total/**"
 
         };
 

@@ -24,8 +24,8 @@ public class RevenueController {
 
     @GetMapping("/total")
     public ResponseEntity<RestResponse<ResRevenueDTO>> getTotalRevenue(
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
+            @RequestParam(name = "startDate", required = false) String startDate,
+            @RequestParam(name = "endDate", required = false) String endDate) {
         RestResponse<ResRevenueDTO> response = new RestResponse<>();
         try {
             Instant start = startDate != null ? Instant.parse(startDate) : null;

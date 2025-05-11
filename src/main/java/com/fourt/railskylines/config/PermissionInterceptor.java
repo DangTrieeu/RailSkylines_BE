@@ -38,7 +38,8 @@ public class PermissionInterceptor implements HandlerInterceptor {
             "/api/v1/vn-pay",
             "/api/v1/booking",
             "/api/v1/callback",
-            "/api/v1/tickets/**");
+            "/api/v1/tickets/**",
+            "/api/v1/total/**");
 
     @Override
     @Transactional
