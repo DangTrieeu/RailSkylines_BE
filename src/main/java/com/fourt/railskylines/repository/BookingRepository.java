@@ -4,6 +4,8 @@ import com.fourt.railskylines.domain.Booking;
 import com.fourt.railskylines.domain.User;
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
@@ -17,4 +19,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByVnpTxnRef(String vnpTxnRef);
 
     List<Booking> findByPaymentStatusAndDateBefore(PaymentStatusEnum paymentStatus, Instant date);
+
+    List<Booking> findByPaymentStatusNotAndDateBefore(PaymentStatusEnum paymentStatus, Instant date);
+
+    @Query("SELECT b FROM Booking b JOIN FETCH b.tickets WHERE b.bookingId = :bookingId")
+    Optional<Booking> findByBookingIdWithTickets(@Param("bookingId") Long bookingId);
 }

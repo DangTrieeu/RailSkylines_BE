@@ -60,14 +60,25 @@ public class Ticket {
     @JoinColumn(name = "booking_id")
     private Booking booking;
 
-    @OneToOne
-    @JoinColumn(name = "seat_id") // Sửa từ "id" thành "seat_id" để khớp với schema
+    @ManyToOne
+    @JoinColumn(name = "seat_id")
     private Seat seat;
+
+    // Thêm boardingStation và alightingStation
+    @ManyToOne
+    @JoinColumn(name = "boarding_station_id")
+    private Station boardingStation;
+
+    @ManyToOne
+    @JoinColumn(name = "alighting_station_id")
+    private Station alightingStation;
 
     @ManyToOne
     @JoinColumn(name = "train_trip_id")
     private TrainTrip trainTrip;
 
+    private Integer boardingOrder; // Thêm để lưu index của boardingStation
+    private Integer alightingOrder; // Thêm để lưu index của alightingStation
     @PrePersist
     public void prePersist() {
         if (this.ticketCode == null) {

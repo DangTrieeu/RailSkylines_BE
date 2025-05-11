@@ -7,6 +7,7 @@ import com.fourt.railskylines.util.constant.SeatStatusEnum;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Pageable;
 
@@ -27,5 +28,15 @@ public interface SeatRepository extends JpaRepository<Seat, Long>, JpaSpecificat
     List<Seat> findByCarriageCarriageIdAndTrainTripTrainTripId(Long carriageId, Long trainTripId);
 
     List<Seat> findBySeatIdInAndSeatStatus(List<Long> seatIds, SeatStatusEnum seatStatusEnum);
+
+    List<Seat> findBySeatIdIn(List<Long> seatIds);
+
+    @Query("SELECT s FROM Seat s WHERE s.trainTrip.id = :trainTripId " +
+           "AND NOT EXISTS (" +
+           "SELECT t FROM Ticket t " +
+           "WHERE t.seat = s AND t.trainTrip.id = :trainTripId AND t.ticketStatus IN ('issued', 'used') " +
+           "AND t.boardingOrder < :alightingOrder AND t.alightingOrder > :boardingOrder" +
+           ")")
+    List<Seat> findAvailableSeatsForSegment(Long trainTripId, int boardingOrder, int alightingOrder);
 
 }

@@ -40,6 +40,12 @@ public class BookingController {
         for (Map<String, Object> ticket : tickets) {
             Long seatNumber = ((Number) ticket.get("seatNumber")).longValue();
             seatIds.add(seatNumber);
+            // Validate boardingStationId và alightingStationId nếu có
+            Object boardingStationIdObj = ticket.get("boardingStationId");
+            Object alightingStationIdObj = ticket.get("alightingStationId");
+            if (boardingStationIdObj == null || alightingStationIdObj == null) {
+                throw new IllegalArgumentException("boardingStationId and alightingStationId must be provided in tickets param");
+            }
         }
 
         // Kiểm tra thủ công seatIds không rỗng

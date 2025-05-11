@@ -67,7 +67,7 @@ public class Booking {
     @Column(name = "contact_phone")
     private String contactPhone;
 
-    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "booking")
     private List<Ticket> tickets;
 
     @ManyToOne
