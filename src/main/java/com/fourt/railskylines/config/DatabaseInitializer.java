@@ -2,6 +2,7 @@ package com.fourt.railskylines.config;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -193,63 +194,8 @@ public class DatabaseInitializer implements CommandLineRunner {
                         normalUserRole.setActive(true);
 
                         // Filter permissions for NORMAL_USER
-                        List<Permission> normalUserPermissions = allPermissions.stream()
-                                        .filter(p -> (p.getApiPath().equals("/api/v1/articles")
-                                                        && p.getMethod().equals("GET")
-                                                        && p.getModule().equals("ARTICLES")) ||
-                                                        (p.getApiPath().equals("/api/v1/articles/{id}")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("ARTICLES"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/carriages/{id}")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("CARRIAGES"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/seats/{id}")
-                                                                        && p.getMethod().equals("PUT")
-                                                                        && p.getModule().equals("SEATS"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/carriages")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("CARRIAGES"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/carriages/seat/{id}")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("CARRIAGES"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/promotions/{id}")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("PROMOTIONS"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/promotions")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("PROMOTIONS"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/stations/{id}")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("STATIONS"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/stations")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("STATIONS"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/trains/{id}")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("TRAINS"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/trains")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("TRAINS"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/train-trips/{id}/carriages")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("TRAIN_TRIPS"))
-                                                        ||
-                                                        (p.getApiPath().equals("/api/v1/train-trips")
-                                                                        && p.getMethod().equals("GET")
-                                                                        && p.getModule().equals("TRAIN_TRIPS")))
-                                        .collect(Collectors.toList());
-                        normalUserRole.setPermissions(normalUserPermissions);
+
+                        normalUserRole.setPermissions(Collections.emptyList());
 
                         // Save both roles
                         this.roleRepository.saveAll(List.of(adminRole, normalUserRole));

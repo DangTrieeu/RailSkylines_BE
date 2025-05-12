@@ -59,8 +59,6 @@ public class SecurityConfiguration {
                 "/api/v1/bookings/**",
                 "/api/v1/callback/**",
                 "/api/v1/tickets/**",
-                "/api/v1/total/**"
-
         };
 
         http
@@ -74,9 +72,9 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/train-trips/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/articles/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
+                                .requestMatchers(HttpMethod.PUT, "/api/v1/seats/**").permitAll()
                                 .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))

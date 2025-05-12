@@ -45,6 +45,16 @@ public class UserService {
     }
 
     public User handleCreateNewUser(User newUser) {
+
+        newUser.setStatus(true);
+        newUser.setCode(CodeUtil.generateVerificationCode());
+        newUser.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes expiration
+        User savedUser = userRepository.save(newUser);
+        mailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getCode());
+        return savedUser;
+    }
+
+    public User handleRegisterNewUser(User newUser) {
         Role normalUserRole = roleRepository.findByName("NORMAL_USER");
         if (normalUserRole != null) {
             newUser.setRole(normalUserRole);
