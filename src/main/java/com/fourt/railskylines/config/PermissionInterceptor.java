@@ -30,7 +30,7 @@ public class PermissionInterceptor implements HandlerInterceptor {
             "/storage/**",
             "/api/v1/files",
             "/api/v1/vn-pay",
-            "/api/v1/booking",
+            "/api/v1/bookings/**",
             "/api/v1/callback",
             "/api/v1/tickets/**");
 
