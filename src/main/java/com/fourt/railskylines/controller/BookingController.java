@@ -5,7 +5,6 @@ import com.fourt.railskylines.domain.Booking;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.service.BookingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -32,8 +31,20 @@ public class BookingController {
     @Transactional
     public ResponseEntity<RestResponse<String>> createBooking(
             @RequestParam("tickets") String ticketsParam,
+            @RequestParam(value = "trainTripId") Long trainTripId,
             @RequestBody @Valid BookingRequestDTO request,
             HttpServletRequest httpServletRequest) throws Exception {
+        // Gán trainTripId từ query parameter
+        if (trainTripId == null) {
+            RestResponse<String> response = new RestResponse<>();
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage("trainTripId is required in query parameter");
+            response.setData(null);
+            response.setError("Invalid request");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+        request.setTrainTripId(trainTripId);
+
         // Parse tickets từ URL param
         List<Map<String, Object>> tickets = objectMapper.readValue(ticketsParam, List.class);
         List<Long> seatIds = new ArrayList<>();

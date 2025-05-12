@@ -46,7 +46,5 @@ public class Seat {
     @Column(name = "seat_type")
     private SeatTypeEnum seatType;
 
-    @ManyToOne
-    @JoinColumn(name = "train_trip_id")
-    private TrainTrip trainTrip;
+
 }

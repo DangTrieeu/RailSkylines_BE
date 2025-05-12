@@ -37,9 +37,6 @@ public class Train {
     @Enumerated(EnumType.STRING)
     private TrainStatusEnum trainStatus;
 
-    // @OneToOne
-    // @JoinColumn(name = "train_trip_id")
-    // private TrainTrip trip;
     @OneToMany(mappedBy = "train", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<TrainTrip> trip;

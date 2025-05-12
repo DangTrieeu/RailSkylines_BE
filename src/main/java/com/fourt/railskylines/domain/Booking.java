@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -36,7 +35,7 @@ public class Booking {
     @Column(name = "booking_code")
     private String bookingCode;
 
-    private Instant date;
+    private Instant date;   
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status")

@@ -15,7 +15,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -64,21 +63,9 @@ public class Ticket {
     @JoinColumn(name = "seat_id")
     private Seat seat;
 
-    // Thêm boardingStation và alightingStation
-    @ManyToOne
-    @JoinColumn(name = "boarding_station_id")
-    private Station boardingStation;
-
-    @ManyToOne
-    @JoinColumn(name = "alighting_station_id")
-    private Station alightingStation;
-
-    @ManyToOne
-    @JoinColumn(name = "train_trip_id")
-    private TrainTrip trainTrip;
-
     private Integer boardingOrder; // Thêm để lưu index của boardingStation
     private Integer alightingOrder; // Thêm để lưu index của alightingStation
+
     @PrePersist
     public void prePersist() {
         if (this.ticketCode == null) {
