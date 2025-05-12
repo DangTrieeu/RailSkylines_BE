@@ -3,6 +3,7 @@ package com.fourt.railskylines.domain;
 import java.time.Instant;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fourt.railskylines.util.constant.PromotionStatusEnum;
 
 import jakarta.persistence.Column;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -45,7 +47,7 @@ public class Promotion {
     @Enumerated(EnumType.STRING)
     private PromotionStatusEnum status;
 
-    @ManyToMany
-    @JoinTable(name = "booking_promotion", joinColumns = @JoinColumn(name = "promotion_id"), inverseJoinColumns = @JoinColumn(name = "booking_id"))
+    @JsonIgnore
+    @OneToMany(mappedBy = "promotion")
     private List<Booking> bookings;
 }

@@ -59,6 +59,11 @@ public class SecurityConfiguration {
                 "/api/v1/bookings/**",
                 "/api/v1/callback/**",
                 "/api/v1/tickets/**",
+                "/api/v1/callback",
+                "/api/v1/tickets/**",
+                "/api/v1/vn-pay",
+                "/api/v1/vn-pay/**",
+                "/api/v1/callback/**"
         };
 
         http
@@ -66,16 +71,18 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(
                         authz -> authz
-                                .requestMatchers(whiteList).permitAll()
-                                .requestMatchers("/api/v1/callback/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/train-trips/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/articles/**").permitAll()
-                                .requestMatchers(HttpMethod.PUT, "/api/v1/seats/**").permitAll()
-                                .anyRequest().authenticated())
+                                // .requestMatchers(whiteList).permitAll()
+                                // .requestMatchers("/api/v1/callback/**").permitAll()
+                                // .requestMatchers("/api/v1/vn-pay/**").permitAll()
+                                // .requestMatchers("/api/v1/callback/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/train-trips/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/articles/**").permitAll()
+                                // .requestMatchers(HttpMethod.PUT, "/api/v1/seats/**").permitAll()
+                                .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(customAuthenticationEntryPoint))

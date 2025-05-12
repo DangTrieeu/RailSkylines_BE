@@ -74,22 +74,24 @@ public class RevenueService {
                                 .collect(Collectors.toList());
 
                 // Tính xếp hạng tàu
-                Map<String, Long> trainTicketCounts = bookings.stream()
-                                .filter(b -> b.getPaymentStatus() == PaymentStatusEnum.success)
-                                .flatMap(b -> b.getTickets().stream())
-                                .collect(Collectors.groupingBy(
-                                                t -> t.getTrainTrip().getTrain().getTrainName(),
-                                                Collectors.counting()));
-                List<ResRevenueDTO.TrainRanking> trainRankings = trainTicketCounts.entrySet().stream()
-                                .map(entry -> {
-                                        ResRevenueDTO.TrainRanking tr = new ResRevenueDTO.TrainRanking();
-                                        tr.setName(entry.getKey());
-                                        tr.setSuccessOrders(entry.getValue());
-                                        tr.setFill(colors[trainTicketCounts.size() % colors.length]); // Gán màu tuần tự
-                                        return tr;
-                                })
-                                .sorted((a, b) -> Long.compare(b.getSuccessOrders(), a.getSuccessOrders()))
-                                .collect(Collectors.toList());
+                // Map<String, Long> trainTicketCounts = bookings.stream()
+                // .filter(b -> b.getPaymentStatus() == PaymentStatusEnum.success)
+                // .flatMap(b -> b.getTickets().stream())
+                // .collect(Collectors.groupingBy(
+                // t -> t.getTrainTrip().getTrain().getTrainName(),
+                // Collectors.counting()));
+                // List<ResRevenueDTO.TrainRanking> trainRankings =
+                // trainTicketCounts.entrySet().stream()
+                // .map(entry -> {
+                // ResRevenueDTO.TrainRanking tr = new ResRevenueDTO.TrainRanking();
+                // tr.setName(entry.getKey());
+                // tr.setSuccessOrders(entry.getValue());
+                // tr.setFill(colors[trainTicketCounts.size() % colors.length]); // Gán màu tuần
+                // tự
+                // return tr;
+                // })
+                // .sorted((a, b) -> Long.compare(b.getSuccessOrders(), a.getSuccessOrders()))
+                // .collect(Collectors.toList());
 
                 // Gán giá trị cho DTO
                 dto.setTotalRevenue(totalRevenue);
@@ -97,7 +99,7 @@ public class RevenueService {
                 dto.setPaidTickets(paidTickets);
                 dto.setPendingTickets(pendingTickets);
                 dto.setRevenueByDate(revenueByDate);
-                dto.setTrainRankings(trainRankings);
+                // dto.setTrainRankings(trainRankings);
 
                 logger.info("Dữ liệu doanh thu đã tính: tổng doanh thu = {}, số ghế đã đặt = {}, vé đã thanh toán = {}, vé đang đặt = {}",
                                 totalRevenue, totalCustomers, paidTickets, pendingTickets);

@@ -14,15 +14,26 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RouteRepository extends JpaRepository<Route, Long>, JpaSpecificationExecutor<Route> {
-    // @Query("SELECT r FROM Route r WHERE r.originStation = :originStation AND
-    // r.journey = :journeyStations")
-    // Optional<Route> findByOriginStationAndJourney(Station originStation,
-    // List<Station> journeyStations);
-    @Query("SELECT r FROM Route r JOIN r.journey j WHERE r.originStation = :originStation " +
-            "GROUP BY r HAVING COUNT(j) = :journeySize AND SUM(CASE WHEN j IN :journeyStations THEN 1 ELSE 0 END) = :journeySize")
-    Optional<Route> findByOriginStationAndJourney(@Param("originStation") Station originStation,
-            @Param("journeyStations") List<Station> journeyStations,
-            @Param("journeySize") long journeySize);
+        @Query("SELECT r FROM Route r JOIN r.journey j WHERE r.originStation = :originStation " +
+                        "GROUP BY r HAVING COUNT(j) = :journeySize AND SUM(CASE WHEN j IN :journeyStations THEN 1 ELSE 0 END) = :journeySize")
+        Optional<Route> findByOriginStationAndJourney(@Param("originStation") Station originStation,
+                        @Param("journeyStations") List<Station> journeyStations,
+                        @Param("journeySize") long journeySize);
 
-    List<Route> findByOriginStation(Station originStation);
+        List<Route> findByOriginStation(Station originStation);
+
+        @Query("SELECT r FROM Route r " +
+                        "WHERE r.originStation.stationName = :originStationName " +
+                        "AND EXISTS (" +
+                        "SELECT 1 FROM Route r2 JOIN r2.journey j " +
+                        "WHERE r2 = r " +
+                        "GROUP BY r2 " +
+                        "HAVING COUNT(j) = :journeySize " +
+                        "AND SUM(CASE WHEN j.stationName IN :journeyStationNames THEN 1 ELSE 0 END) = :journeySize" +
+                        ")")
+        Optional<Route> findByOriginStationNameAndJourneyStationNames(
+                        @Param("originStationName") String originStationName,
+                        @Param("journeyStationNames") List<String> journeyStationNames,
+                        @Param("journeySize") long journeySize);
+
 }

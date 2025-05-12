@@ -31,8 +31,12 @@ public class PermissionInterceptor implements HandlerInterceptor {
             "/api/v1/files",
             "/api/v1/vn-pay",
             "/api/v1/bookings/**",
+            "/api/v1/bookings",
             "/api/v1/callback",
-            "/api/v1/tickets/**");
+            "/api/v1/tickets/**",
+            "/api/v1/vn-pay",
+            "/api/v1/vn-pay/**",
+            "/api/v1/callback/**");
 
     @Override
     @Transactional
@@ -48,6 +52,13 @@ public class PermissionInterceptor implements HandlerInterceptor {
         System.out.println(">>> path= " + path);
         System.out.println(">>> httpMethod= " + httpMethod);
         System.out.println(">>> requestURI= " + requestURI);
+        String normalizedURI = requestURI.split("\\?")[0];
+
+        // Specific bypass for POST /api/v1/bookings
+        if (normalizedURI.equals("/api/v1/bookings") && "POST".equalsIgnoreCase(httpMethod)) {
+            System.out.println(">>> Bypassing permission check for POST /api/v1/bookings");
+            return true;
+        }
         if (requestURI.startsWith("/api/v1/articles") && httpMethod.equals("GET")) {
             System.out.println(">>> Bypassing permission check for GET /api/v1/articles/**");
             return true;
@@ -70,6 +81,10 @@ public class PermissionInterceptor implements HandlerInterceptor {
             return true;
         }
         if (requestURI.startsWith("/api/v1/trains") && httpMethod.equals("GET")) {
+            System.out.println(">>> Bypassing permission check for GET /api/v1/trains/**");
+            return true;
+        }
+        if (requestURI.startsWith("/api/v1/bookings") && httpMethod.equals("POST")) {
             System.out.println(">>> Bypassing permission check for GET /api/v1/trains/**");
             return true;
         }

@@ -1,11 +1,11 @@
 package com.fourt.railskylines.domain.request;
 
-import lombok.Getter;
-import lombok.Setter;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
 import java.util.List;
+
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -20,8 +20,8 @@ public class TrainTripRequestDTO {
     private List<String> journeyStationNames;
 
     @NotNull(message = "Departure time is required")
-    private Instant departureTime;
+    private String departureTime;
 
     @NotNull(message = "Arrival time is required")
-    private Instant arrivalTime;
+    private String arrivalTime;
 }

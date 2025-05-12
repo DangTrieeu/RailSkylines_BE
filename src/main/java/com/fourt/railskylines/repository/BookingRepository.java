@@ -38,4 +38,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         @Param("startDate") Instant startDate,
                         @Param("endDate") Instant endDate,
                         @Param("statuses") List<PaymentStatusEnum> statuses);
+
+        List<Booking> findByPaymentStatusNotAndDateBefore(PaymentStatusEnum paymentStatus, Instant date);
+
+        @Query("SELECT b FROM Booking b JOIN FETCH b.tickets WHERE b.bookingId = :bookingId")
+        Optional<Booking> findByBookingIdWithTickets(@Param("bookingId") Long bookingId);
 }

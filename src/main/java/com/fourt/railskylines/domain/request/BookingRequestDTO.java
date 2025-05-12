@@ -10,7 +10,6 @@ import java.util.List;
 @Getter
 @Setter
 public class BookingRequestDTO {
-    // @NotEmpty
     private List<Long> seatIds;
 
     private Long userId;
@@ -20,7 +19,7 @@ public class BookingRequestDTO {
 
     private String contactPhone;
 
-    private List<Long> promotionIds;
+    private Long promotionId;
 
     @NotEmpty
     private List<TicketRequestDTO> tickets;
@@ -28,4 +27,6 @@ public class BookingRequestDTO {
     private String paymentType;
 
     private String ticketsParam;
+
+    private Long trainTripId;
 }

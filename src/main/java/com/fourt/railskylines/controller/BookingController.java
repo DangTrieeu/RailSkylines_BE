@@ -1,12 +1,10 @@
 package com.fourt.railskylines.controller;
 
-import com.fourt.railskylines.domain.response.BookingResponseDTO;
 import com.fourt.railskylines.domain.response.RestResponse;
 import com.fourt.railskylines.domain.Booking;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.service.BookingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -33,14 +31,33 @@ public class BookingController {
     @Transactional
     public ResponseEntity<RestResponse<String>> createBooking(
             @RequestParam("tickets") String ticketsParam,
+            @RequestParam(value = "trainTripId") Long trainTripId,
             @RequestBody @Valid BookingRequestDTO request,
             HttpServletRequest httpServletRequest) throws Exception {
+        // Gán trainTripId từ query parameter
+        if (trainTripId == null) {
+            RestResponse<String> response = new RestResponse<>();
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage("trainTripId is required in query parameter");
+            response.setData(null);
+            response.setError("Invalid request");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+        request.setTrainTripId(trainTripId);
+
         // Parse tickets từ URL param
         List<Map<String, Object>> tickets = objectMapper.readValue(ticketsParam, List.class);
         List<Long> seatIds = new ArrayList<>();
         for (Map<String, Object> ticket : tickets) {
             Long seatNumber = ((Number) ticket.get("seatNumber")).longValue();
-            seatIds.add(seatNumber); // Đảm bảo seatNumber là Long
+            seatIds.add(seatNumber);
+            // Validate boardingStationId và alightingStationId nếu có
+            Object boardingStationIdObj = ticket.get("boardingStationId");
+            Object alightingStationIdObj = ticket.get("alightingStationId");
+            if (boardingStationIdObj == null || alightingStationIdObj == null) {
+                throw new IllegalArgumentException(
+                        "boardingStationId and alightingStationId must be provided in tickets param");
+            }
         }
 
         // Kiểm tra thủ công seatIds không rỗng
@@ -77,6 +94,11 @@ public class BookingController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
+        // Validate promotionId
+        if (request.getPromotionId() != null) {
+            // Optional: Add additional validation if needed
+        }
+
         // Tạo booking
         Booking booking = bookingService.createBooking(request, httpServletRequest);
 
@@ -95,7 +117,7 @@ public class BookingController {
 
     @GetMapping("/bookings/history")
     public ResponseEntity<RestResponse<List<Booking>>> getBookingHistory(HttpServletRequest httpServletRequest) {
-        String username = httpServletRequest.getRemoteUser(); // Giả sử sử dụng Spring Security
+        String username = httpServletRequest.getRemoteUser();
         if (username == null) {
             throw new RuntimeException("User not authenticated");
         }
@@ -108,26 +130,5 @@ public class BookingController {
         response.setError(null);
 
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/bookings/{bookingId}")
-    public ResponseEntity<RestResponse<BookingResponseDTO>> getBookingById(
-            @PathVariable("bookingId") String bookingId) {
-        try {
-            BookingResponseDTO booking = bookingService.getBookingById(bookingId);
-            RestResponse<BookingResponseDTO> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("Booking retrieved successfully");
-            response.setData(booking);
-            response.setError(null);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            RestResponse<BookingResponseDTO> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.NOT_FOUND.value());
-            response.setMessage(e.getMessage());
-            response.setData(null);
-            response.setError("Booking not found");
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
     }
 }

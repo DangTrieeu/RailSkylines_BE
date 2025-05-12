@@ -36,44 +36,4 @@ public class TicketService {
         return booking;
     }
 
-    public TicketResponseDTO getTicketByCode(String ticketCode) {
-        Optional<Ticket> ticketOpt = this.ticketRepository.findByTicketCode(ticketCode);
-        if (ticketOpt.isEmpty()) {
-            throw new RuntimeException("Ticket not found for ticketCode: " + ticketCode);
-        }
-        Ticket ticket = ticketOpt.get();
-
-        // Map to TicketResponseDTO
-        TicketResponseDTO ticketDTO = new TicketResponseDTO();
-        ticketDTO.setTicketId(ticket.getTicketId());
-        ticketDTO.setCustomerObject(ticket.getCustomerObject());
-        ticketDTO.setTicketCode(ticket.getTicketCode());
-        ticketDTO.setName(ticket.getName());
-        ticketDTO.setCitizenId(ticket.getCitizenId());
-        ticketDTO.setPrice(ticket.getPrice());
-        ticketDTO.setStartDay(ticket.getStartDay());
-        ticketDTO.setTicketStatus(ticket.getTicketStatus());
-
-        // Map Seat
-        TicketResponseDTO.SeatDTO seatDTO = new TicketResponseDTO.SeatDTO();
-        seatDTO.setSeatId(ticket.getSeat().getSeatId());
-        seatDTO.setPrice(ticket.getSeat().getPrice());
-        seatDTO.setSeatStatus(ticket.getSeat().getSeatStatus().name());
-        ticketDTO.setSeat(seatDTO);
-
-        // Map TrainTrip
-        TicketResponseDTO.TrainTripDTO trainTripDTO = new TicketResponseDTO.TrainTripDTO();
-        trainTripDTO.setTrainTripId(ticket.getTrainTrip().getTrainTripId());
-        // trainTripDTO.setDeparture(ticket.getTrainTrip().getDeparture());
-        // trainTripDTO.setArrival(ticket.getTrainTrip().getArrival());
-
-        // Map Train
-        TicketResponseDTO.TrainTripDTO.TrainDTO trainDTO = new TicketResponseDTO.TrainTripDTO.TrainDTO();
-        trainDTO.setTrainId(ticket.getTrainTrip().getTrain().getTrainId());
-        trainDTO.setTrainName(ticket.getTrainTrip().getTrain().getTrainName());
-        trainTripDTO.setTrain(trainDTO);
-
-        ticketDTO.setTrainTrip(trainTripDTO);
-        return ticketDTO;
-    }
 }
