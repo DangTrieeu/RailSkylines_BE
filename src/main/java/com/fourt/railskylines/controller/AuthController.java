@@ -19,15 +19,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
+import com.fourt.railskylines.domain.Role;
 import com.fourt.railskylines.domain.User;
 import com.fourt.railskylines.domain.request.ReqLoginDTO;
+import com.fourt.railskylines.domain.request.ResetPasswordDTO;
 import com.fourt.railskylines.domain.response.ResCreateUserDTO;
 import com.fourt.railskylines.domain.response.ResLoginDTO;
+import com.fourt.railskylines.domain.response.VerifyCodeDTO;
+import com.fourt.railskylines.domain.response.VerifyEmailDTO;
 import com.fourt.railskylines.service.UserService;
 import com.fourt.railskylines.util.SecurityUtil;
 import com.fourt.railskylines.util.annotation.APIMessage;
 import com.fourt.railskylines.util.error.IdInvalidException;
-
 
 @RestController
 @RequestMapping("/api/v1")
@@ -36,7 +39,7 @@ public class AuthController {
     private final SecurityUtil securityUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    
+
     @Value("${railskylines.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
@@ -71,7 +74,8 @@ public class AuthController {
                     currentUserDB.getUserId(),
                     currentUserDB.getEmail(),
                     currentUserDB.getFullName(),
-                    currentUserDB.getRole());
+                    currentUserDB.getRole(),
+                    currentUserDB.isStatus());
             res.setUser(userLogin);
         }
 
@@ -98,6 +102,7 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, resCookies.toString())
                 .body(res);
     }
+
     @GetMapping("/auth/account")
     @APIMessage("fetch account")
     public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
@@ -146,7 +151,8 @@ public class AuthController {
                     currentUserDB.getUserId(),
                     currentUserDB.getEmail(),
                     currentUserDB.getFullName(),
-                    currentUserDB.getRole());
+                    currentUserDB.getRole(),
+                    currentUser.isStatus());
             res.setUser(userLogin);
         }
 
@@ -211,7 +217,57 @@ public class AuthController {
 
         String hashPassword = this.passwordEncoder.encode(postManUser.getPassword());
         postManUser.setPassword(hashPassword);
-        User user = this.userService.handleCreateNewUser(postManUser);
+
+        User user = this.userService.handleRegisterNewUser(postManUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResCreateUserDTO(user));
+    }
+
+    @PostMapping("/auth/verify-email")
+    public ResponseEntity<String> verifyEmail(@Valid @RequestBody VerifyEmailDTO verifyEmailDTO) {
+        try {
+
+            userService.verifyEmail(verifyEmailDTO);
+            return ResponseEntity.ok("Mã xác minh đã được gửi đến email của bạn");
+        } catch (IdInvalidException e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Không thể gửi mã xác minh");
+        }
+    }
+
+    @PostMapping("/auth/verify-code")
+    public ResponseEntity<String> verifyCode(@Valid @RequestBody VerifyCodeDTO verifyCodeDTO) {
+        try {
+
+            userService.verifyCode(verifyCodeDTO);
+            return ResponseEntity.ok("Xác minh mã OTP thành công");
+        } catch (IdInvalidException e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Không thể xác minh mã OTP");
+        }
+    }
+
+    @PostMapping("/auth/change-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
+        try {
+
+            if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+
+                return ResponseEntity.badRequest().body("Mật khẩu xác nhận không khớp");
+            }
+            userService.resetPassword(dto.getEmail(), dto.getVerificationCode(), dto.getNewPassword());
+            return ResponseEntity.ok("Mật khẩu đã được đặt lại thành công");
+        } catch (IdInvalidException e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đặt lại mật khẩu thất bại");
+        }
     }
 }

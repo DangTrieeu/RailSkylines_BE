@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
@@ -43,10 +44,10 @@ public class BookingService {
     private final TrainTripRepository trainTripRepository;
 
     public BookingService(SeatRepository seatRepository, BookingRepository bookingRepository,
-                         TicketRepository ticketRepository, PromotionRepository promotionRepository,
-                         UserRepository userRepository, NotificationService notificationService,
-                         PaymentService paymentService, ObjectMapper objectMapper,
-                         StationRepository stationRepository, TrainTripRepository trainTripRepository) {
+            TicketRepository ticketRepository, PromotionRepository promotionRepository,
+            UserRepository userRepository, NotificationService notificationService,
+            PaymentService paymentService, ObjectMapper objectMapper,
+            StationRepository stationRepository, TrainTripRepository trainTripRepository) {
         this.seatRepository = seatRepository;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
@@ -108,7 +109,8 @@ public class BookingService {
 
         for (Seat seat : seats) {
             if (!seat.getCarriage().getTrain().equals(train)) {
-                throw new RuntimeException("Ghế " + seat.getSeatId() + " không thuộc chuyến tàu của TrainTrip " + trainTripId);
+                throw new RuntimeException(
+                        "Ghế " + seat.getSeatId() + " không thuộc chuyến tàu của TrainTrip " + trainTripId);
             }
         }
 
@@ -147,7 +149,8 @@ public class BookingService {
                 Object alightingStationIdObj = ticketParam.get("alightingStationId");
 
                 if (!(boardingStationIdObj instanceof Number) || !(alightingStationIdObj instanceof Number)) {
-                    throw new RuntimeException("Invalid boardingStationId or alightingStationId in ticketsParam at index " + i);
+                    throw new RuntimeException(
+                            "Invalid boardingStationId or alightingStationId in ticketsParam at index " + i);
                 }
 
                 Long boardingStationIdFromParam = ((Number) boardingStationIdObj).longValue();
@@ -279,6 +282,9 @@ public class BookingService {
         long amount = (long) booking.getTotalPrice();
         String bankCode = "NCB";
         httpServletRequest.setAttribute("txnRef", booking.getBookingCode());
+
+        PaymentDTO.VNPayResponse vnPayResponse = paymentService.createVnPayPayment(httpServletRequest, amount, bankCode,
+                booking.getBookingCode());
 
         PaymentDTO.VNPayResponse vnPayResponse = paymentService.createVnPayPayment(httpServletRequest, amount, bankCode,
                 booking.getBookingCode());
@@ -418,13 +424,16 @@ public class BookingService {
                     .filter(trip -> {
                         List<Station> journey = trip.getRoute().getJourney();
                         boolean hasBoarding = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket.getBoardingOrder());
+                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket
+                                        .getBoardingOrder());
                         boolean hasAlighting = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket.getAlightingOrder());
+                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket
+                                        .getAlightingOrder());
                         return hasBoarding && hasAlighting;
                     })
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("TrainTrip not found for ticket: " + firstTicket.getTicketCode()));
+                    .orElseThrow(() -> new RuntimeException(
+                            "TrainTrip not found for ticket: " + firstTicket.getTicketCode()));
 
             Route route = trainTrip.getRoute();
             List<Station> journey = route.getJourney();
@@ -440,11 +449,13 @@ public class BookingService {
                 Station boardingStation = journey.stream()
                         .filter(station -> (int) Math.round(station.getPosition()) == ticket.getBoardingOrder())
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Boarding station not found for order: " + ticket.getBoardingOrder()));
+                        .orElseThrow(() -> new RuntimeException(
+                                "Boarding station not found for order: " + ticket.getBoardingOrder()));
                 Station alightingStation = journey.stream()
                         .filter(station -> (int) Math.round(station.getPosition()) == ticket.getAlightingOrder())
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Alighting station not found for order: " + ticket.getAlightingOrder()));
+                        .orElseThrow(() -> new RuntimeException(
+                                "Alighting station not found for order: " + ticket.getAlightingOrder()));
 
                 ticketDto.setBoardingStationName(boardingStation.getStationName());
                 ticketDto.setAlightingStationName(alightingStation.getStationName());
@@ -464,11 +475,13 @@ public class BookingService {
     }
 
     /**
-     * Find a booking by booking code and VNP transaction reference, no user authentication required.
+     * Find a booking by booking code and VNP transaction reference, no user
+     * authentication required.
      */
     public Booking findBookingByCodeAndVnpTxnRef(String bookingCode, String vnpTxnRef) {
         Booking booking = bookingRepository.findByBookingCodeAndVnpTxnRef(bookingCode, vnpTxnRef)
-                .orElseThrow(() -> new RuntimeException("Booking not found or VNP transaction reference does not match"));
+                .orElseThrow(
+                        () -> new RuntimeException("Booking not found or VNP transaction reference does not match"));
         return booking;
     }
 }

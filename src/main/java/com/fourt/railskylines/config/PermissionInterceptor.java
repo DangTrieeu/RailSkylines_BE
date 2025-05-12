@@ -18,12 +18,6 @@ import com.fourt.railskylines.util.error.PermissionException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-// import vn.hoidanit.jobhunter.domain.Permission;
-// import vn.hoidanit.jobhunter.domain.Role;
-// import vn.hoidanit.jobhunter.domain.User;
-// import vn.hoidanit.jobhunter.service.UserService;
-// import vn.hoidanit.jobhunter.util.SecurityUtil;
-// import vn.hoidanit.jobhunter.util.error.PermissionException;
 
 public class PermissionInterceptor implements HandlerInterceptor {
 
@@ -35,7 +29,10 @@ public class PermissionInterceptor implements HandlerInterceptor {
             "/api/v1/auth/**",
             "/storage/**",
             "/api/v1/files",
-            "/api/v1/vn-pay");
+            "/api/v1/vn-pay",
+            "/api/v1/booking",
+            "/api/v1/callback",
+            "/api/v1/tickets/**");
 
     @Override
     @Transactional
@@ -51,13 +48,38 @@ public class PermissionInterceptor implements HandlerInterceptor {
         System.out.println(">>> path= " + path);
         System.out.println(">>> httpMethod= " + httpMethod);
         System.out.println(">>> requestURI= " + requestURI);
-
+        if (requestURI.startsWith("/api/v1/articles") && httpMethod.equals("GET")) {
+            System.out.println(">>> Bypassing permission check for GET /api/v1/articles/**");
+            return true;
+        }
+        if (requestURI.startsWith("/api/v1/promotions") &&
+                httpMethod.equals("GET")) {
+            System.out.println(">>> Bypassing permission check for GET /api/v1/promotions/**");
+            return true;
+        }
+        if (requestURI.startsWith("/api/v1/seats/**") && httpMethod.equals("PUT")) {
+            System.out.println(">>> Bypassing permission check for PUT /api/v1/seats/**");
+            return true;
+        }
+        if (requestURI.startsWith("/api/v1/stations") && httpMethod.equals("GET")) {
+            System.out.println(">>> Bypassing permission check for GET /api/v1/stations/**");
+            return true;
+        }
+        if (requestURI.startsWith("/api/v1/train-trips") && httpMethod.equals("GET")) {
+            System.out.println(">>> Bypassing permission check for GET /api/v1/train-trips/**");
+            return true;
+        }
+        if (requestURI.startsWith("/api/v1/trains") && httpMethod.equals("GET")) {
+            System.out.println(">>> Bypassing permission check for GET /api/v1/trains/**");
+            return true;
+        }
         // Kiểm tra xem endpoint có nằm trong whitelist không
         boolean isWhitelisted = WHITELIST.stream().anyMatch(whitelistPath -> {
             if (whitelistPath.endsWith("/**")) {
                 String prefix = whitelistPath.substring(0, whitelistPath.length() - 3);
                 return requestURI.startsWith(prefix);
             }
+
             return requestURI.equals(whitelistPath);
         });
 

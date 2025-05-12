@@ -12,18 +12,18 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    List<Booking> findByUser(User user);
+        Optional<Booking> findByBookingCode(String bookingCode);
 
-    Optional<Booking> findByBookingCode(String bookingCode);
+        List<Booking> findByUser(User user);
 
-    Optional<Booking> findByVnpTxnRef(String vnpTxnRef);
+        Optional<Booking> findByVnpTxnRef(String vnpTxnRef);
 
-    List<Booking> findByPaymentStatusAndDateBefore(PaymentStatusEnum paymentStatus, Instant date);
+        List<Booking> findByPaymentStatusAndDateBefore(PaymentStatusEnum paymentStatus, Instant date);
 
-    List<Booking> findByPaymentStatusNotAndDateBefore(PaymentStatusEnum paymentStatus, Instant date);
+        List<Booking> findByPaymentStatusNotAndDateBefore(PaymentStatusEnum paymentStatus, Instant date);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.tickets WHERE b.bookingId = :bookingId")
-    Optional<Booking> findByBookingIdWithTickets(@Param("bookingId") Long bookingId);
+        @Query("SELECT b FROM Booking b JOIN FETCH b.tickets WHERE b.bookingId = :bookingId")
+        Optional<Booking> findByBookingIdWithTickets(@Param("bookingId") Long bookingId);
 
-    Optional<Booking> findByBookingCodeAndVnpTxnRef(String bookingCode, String vnpTxnRef);
+        Optional<Booking> findByBookingCodeAndVnpTxnRef(String bookingCode, String vnpTxnRef);
 }

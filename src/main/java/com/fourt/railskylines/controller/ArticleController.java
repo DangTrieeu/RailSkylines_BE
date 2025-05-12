@@ -60,7 +60,7 @@ public class ArticleController {
             throw new IdInvalidException("Article with id = not exits " + id + " , pls check again");
         }
         this.articleService.handleDeleteArticle(id);
-        return ResponseEntity.ok("Delete Success");
+        return ResponseEntity.ok().body(null);
     }
 
     @GetMapping("/articles/{id}")

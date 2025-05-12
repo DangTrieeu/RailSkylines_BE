@@ -6,7 +6,6 @@ import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.CarriageRepository;
 import com.fourt.railskylines.repository.SeatRepository;
 import com.fourt.railskylines.repository.TrainRepository;
-import com.fourt.railskylines.util.constant.CarriageTypeEnum;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.SeatTypeEnum;
 import com.fourt.railskylines.util.error.IdInvalidException;
@@ -170,7 +169,9 @@ public class CarriageService {
         return currentCarriage;
     }
 
+    @Transactional
     public void handleDeleteCarriage(long id) {
+        this.seatRepository.deleteByCarriageCarriageId(id); // Updated method call(id);
         this.carriageRepository.deleteById(id);
     }
 

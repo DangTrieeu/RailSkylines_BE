@@ -13,5 +13,7 @@ import org.springframework.stereotype.Repository;
 public interface CarriageRepository extends JpaRepository<Carriage, Long>, JpaSpecificationExecutor<Carriage> {
     List<Carriage> findByTrain(Train train);
 
+    void deleteByTrain_TrainId(Long trainId); // Use the relationship path
+
     List<Carriage> findByTrainTrainId(Long trainId);
 }

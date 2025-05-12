@@ -25,6 +25,8 @@ public interface SeatRepository extends JpaRepository<Seat, Long>, JpaSpecificat
 
     void deleteByCarriage(Carriage carriage);
 
+    void deleteByCarriageCarriageId(Long id);
+
     List<Seat> findBySeatIdInAndSeatStatus(List<Long> seatIds, SeatStatusEnum seatStatusEnum);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

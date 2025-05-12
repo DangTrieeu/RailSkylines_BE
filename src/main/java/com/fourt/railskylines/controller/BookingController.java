@@ -60,7 +60,8 @@ public class BookingController {
             Object boardingStationIdObj = ticket.get("boardingStationId");
             Object alightingStationIdObj = ticket.get("alightingStationId");
             if (boardingStationIdObj == null || alightingStationIdObj == null) {
-                throw new IllegalArgumentException("boardingStationId and alightingStationId must be provided in tickets param");
+                throw new IllegalArgumentException(
+                        "boardingStationId and alightingStationId must be provided in tickets param");
             }
         }
 
@@ -79,7 +80,8 @@ public class BookingController {
         if (seatIds.size() != request.getTickets().size()) {
             RestResponse<String> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé (" + request.getTickets().size() + ")");
+            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé ("
+                    + request.getTickets().size() + ")");
             response.setData(null);
             response.setError("Invalid request");
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);

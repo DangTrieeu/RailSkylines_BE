@@ -36,7 +36,7 @@ public class Booking {
     @Column(name = "booking_code")
     private String bookingCode;
 
-    private Instant date;   
+    private Instant date;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status")

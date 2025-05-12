@@ -29,7 +29,8 @@ public class TicketService {
     }
 
     /**
-     * Retrieve ticket history for the authenticated user, formatted as ResTicketHistoryDTO.
+     * Retrieve ticket history for the authenticated user, formatted as
+     * ResTicketHistoryDTO.
      */
     public List<ResTicketHistoryDTO> getTicketHistoryByUser(String email) {
         User user = userRepository.findByEmail(email);
@@ -58,13 +59,16 @@ public class TicketService {
                     .filter(trip -> {
                         List<Station> journey = trip.getRoute().getJourney();
                         boolean hasBoarding = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == ticket.getBoardingOrder());
+                                .anyMatch(station -> (int) Math.round(station.getPosition()) == ticket
+                                        .getBoardingOrder());
                         boolean hasAlighting = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == ticket.getAlightingOrder());
+                                .anyMatch(station -> (int) Math.round(station.getPosition()) == ticket
+                                        .getAlightingOrder());
                         return hasBoarding && hasAlighting;
                     })
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("TrainTrip not found for ticket: " + ticket.getTicketCode()));
+                    .orElseThrow(
+                            () -> new RuntimeException("TrainTrip not found for ticket: " + ticket.getTicketCode()));
 
             Route route = trainTrip.getRoute();
             List<Station> journey = route.getJourney();
@@ -72,11 +76,13 @@ public class TicketService {
             Station boardingStation = journey.stream()
                     .filter(station -> (int) Math.round(station.getPosition()) == ticket.getBoardingOrder())
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Boarding station not found for order: " + ticket.getBoardingOrder()));
+                    .orElseThrow(() -> new RuntimeException(
+                            "Boarding station not found for order: " + ticket.getBoardingOrder()));
             Station alightingStation = journey.stream()
                     .filter(station -> (int) Math.round(station.getPosition()) == ticket.getAlightingOrder())
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Alighting station not found for order: " + ticket.getAlightingOrder()));
+                    .orElseThrow(() -> new RuntimeException(
+                            "Alighting station not found for order: " + ticket.getAlightingOrder()));
 
             dto.setBoardingStationName(boardingStation.getStationName());
             dto.setAlightingStationName(alightingStation.getStationName());

@@ -1,5 +1,6 @@
 package com.fourt.railskylines.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,6 +21,7 @@ public class Article {
     private long articleId;
 
     private String title;
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
     private String thumbnail;
 

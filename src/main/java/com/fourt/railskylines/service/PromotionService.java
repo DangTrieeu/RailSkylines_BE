@@ -5,13 +5,11 @@ import com.fourt.railskylines.domain.request.ReqPromotionDTO;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.PromotionRepository;
 import com.fourt.railskylines.util.constant.PromotionStatusEnum;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
