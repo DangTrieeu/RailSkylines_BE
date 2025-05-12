@@ -58,7 +58,12 @@ public class User {
     private List<Article> articles;
 
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Ticket> tickets;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Booking> bookings;
 
     @PrePersist
     public void handleBeforeCreate() {

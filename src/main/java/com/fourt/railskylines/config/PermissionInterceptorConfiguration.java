@@ -26,8 +26,13 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
                 "/api/v1/vn-pay/**", // Thêm để bao quát các biến thể
                 "/api/v1/callback",
                 "/api/v1/callback/**",
-                "/api/v1/bookings" ,// Thêm để bao quát các biến thể
-                "/api/v1/bookings/**" // Thêm để bao quát các biến thể
+                "/api/v1/bookings", // Thêm để bao quát các biến thể
+                "/api/v1/bookings/**", // Thêm để bao quát các biến thể
+                "/api/v1/tickets/search/**",
+                "/api/v1/bookings/search/",
+                "/api/v1/bookings/search/**",
+                "/api/v1/bookings/history",
+                "/api/v1/tickets/history/**",
 
         };
         registry.addInterceptor(getPermissionInterceptor())

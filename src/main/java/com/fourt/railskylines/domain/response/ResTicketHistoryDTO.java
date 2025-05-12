@@ -1,4 +1,4 @@
-package com.fourt.railskylines.domain.request;
+package com.fourt.railskylines.domain.response;
 
 import java.time.Instant;
 
@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReqTicketHistoryDTO {
+public class ResTicketHistoryDTO {
     private String ticketCode;
     private String name;
     private String citizenId;
@@ -23,3 +23,4 @@ public class ReqTicketHistoryDTO {
     private String alightingStationName;
     private Instant startDay;
 }
+

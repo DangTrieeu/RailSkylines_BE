@@ -24,4 +24,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.tickets WHERE b.bookingId = :bookingId")
     Optional<Booking> findByBookingIdWithTickets(@Param("bookingId") Long bookingId);
+
+    Optional<Booking> findByBookingCodeAndVnpTxnRef(String bookingCode, String vnpTxnRef);
 }

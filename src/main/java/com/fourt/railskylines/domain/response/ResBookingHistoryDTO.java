@@ -1,4 +1,4 @@
-package com.fourt.railskylines.domain.request;
+package com.fourt.railskylines.domain.response;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReqBookingHistoryDTO {
+public class ResBookingHistoryDTO {
     private String bookingCode;
     private PaymentStatusEnum paymentStatus;
     private Instant date;
@@ -22,5 +22,5 @@ public class ReqBookingHistoryDTO {
     private String paymentType;
     private String contactEmail;    
     private String contactPhone;
-    private List<ReqTicketHistoryDTO> tickets;
+    private List<ResTicketHistoryDTO> tickets;
 }
