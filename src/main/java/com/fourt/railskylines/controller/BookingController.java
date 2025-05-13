@@ -85,7 +85,9 @@ public class BookingController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        if (request.getUserId() == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
+        // Kiểm tra contactEmail cho người không đăng ký
+        String email = SecurityUtil.getCurrentUserLogin().orElse(null);
+        if (email == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
             RestResponse<String> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());
             response.setMessage("Contact email is required for non-registered users");

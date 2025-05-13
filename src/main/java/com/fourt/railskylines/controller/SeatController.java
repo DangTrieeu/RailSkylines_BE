@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -30,7 +31,8 @@ public class SeatController {
     private final StationRepository stationRepository;
     private final TrainTripRepository trainTripRepository;
 
-    public SeatController(SeatService seatService, StationRepository stationRepository, TrainTripRepository trainTripRepository) {
+    public SeatController(SeatService seatService, StationRepository stationRepository,
+            TrainTripRepository trainTripRepository) {
         this.seatService = seatService;
         this.stationRepository = stationRepository;
         this.trainTripRepository = trainTripRepository;
@@ -88,9 +90,10 @@ public class SeatController {
     @GetMapping("/seats/available")
     @APIMessage("Fetch available seats for a segment")
     public ResponseEntity<List<Seat>> getAvailableSeatsForSegment(
-            @RequestParam Long trainTripId,
-            @RequestParam Long boardingStationId,
-            @RequestParam Long alightingStationId) {
+            @RequestParam("trainTripId") Long trainTripId,
+            @RequestParam("boardingStationId") Long boardingStationId,
+            @RequestParam("alightingStationId") Long alightingStationId) {
+        // Kiểm tra ga có tồn tại
         Optional<Station> boardingStationOpt = stationRepository.findById(boardingStationId);
         Optional<Station> alightingStationOpt = stationRepository.findById(alightingStationId);
         if (boardingStationOpt.isEmpty()) {
@@ -102,6 +105,7 @@ public class SeatController {
         Station boardingStation = boardingStationOpt.get();
         Station alightingStation = alightingStationOpt.get();
 
+        // Kiểm tra chuyến tàu có tồn tại
         Optional<TrainTrip> trainTripOpt = trainTripRepository.findById(trainTripId);
         if (trainTripOpt.isEmpty()) {
             throw new IllegalArgumentException("Chuyến tàu không tồn tại");
@@ -109,20 +113,29 @@ public class SeatController {
         TrainTrip trainTrip = trainTripOpt.get();
         Route route = trainTrip.getRoute();
 
-        List<Station> routeStations = route.getJourney();
-        int boardingOrder = IntStream.range(0, routeStations.size())
-                .filter(idx -> routeStations.get(idx).getStationId() == boardingStationId)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Ga lên tàu không thuộc lộ trình"));
-        int alightingOrder = IntStream.range(0, routeStations.size())
-                .filter(idx -> routeStations.get(idx).getStationId() == alightingStationId)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Ga xuống tàu không thuộc lộ trình"));
+        // Tạo danh sách đầy đủ: originStation + journey
+        List<Station> allStations = new ArrayList<>();
+        allStations.add(route.getOriginStation());
+        allStations.addAll(route.getJourney());
 
+        // Tính boardingOrder và alightingOrder dựa trên danh sách đầy đủ
+        int boardingOrder = allStations.indexOf(boardingStation);
+        int alightingOrder = allStations.indexOf(alightingStation);
+
+        // Kiểm tra ga có trong lộ trình
+        if (boardingOrder == -1) {
+            throw new IllegalArgumentException("Ga lên tàu không thuộc lộ trình");
+        }
+        if (alightingOrder == -1) {
+            throw new IllegalArgumentException("Ga xuống tàu không thuộc lộ trình");
+        }
+
+        // Kiểm tra ga lên phải trước ga xuống
         if (boardingOrder >= alightingOrder) {
             throw new IllegalArgumentException("Ga lên tàu phải trước ga xuống tàu");
         }
 
+        // Lấy danh sách ghế trống
         List<Seat> seats = seatService.findAvailableSeatsForSegment(trainTripId, boardingOrder, alightingOrder);
         return ResponseEntity.ok(seats);
     }

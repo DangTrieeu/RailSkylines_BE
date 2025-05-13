@@ -15,4 +15,5 @@ public class ResCreateUserDTO {
     private String phoneNumber;
     private String avatar;
     private Instant createdAt;
+    private Instant codeExpired;
 }

@@ -33,6 +33,7 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
                 "/api/v1/bookings/search/**",
                 "/api/v1/bookings/history",
                 "/api/v1/tickets/history/**",
+                "/api/v1/seats/available/**",
 
         };
         registry.addInterceptor(getPermissionInterceptor())

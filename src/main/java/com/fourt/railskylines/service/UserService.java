@@ -1,28 +1,46 @@
 package com.fourt.railskylines.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.fourt.railskylines.domain.Role;
 import com.fourt.railskylines.domain.User;
 import com.fourt.railskylines.domain.response.ResCreateUserDTO;
 import com.fourt.railskylines.domain.response.ResUpdateUserDTO;
 import com.fourt.railskylines.domain.response.ResUserDTO;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.VerifyCodeDTO;
+import com.fourt.railskylines.domain.response.VerifyEmailDTO;
 import com.fourt.railskylines.domain.response.ResUserDTO.RoleUser;
+import com.fourt.railskylines.repository.RoleRepository;
 import com.fourt.railskylines.repository.UserRepository;
+import com.fourt.railskylines.util.CodeUtil;
+import com.fourt.railskylines.util.error.IdInvalidException;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
 @Service
 public class UserService {
-    private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final EmailService mailService;
+
+    public UserService(UserRepository userRepository, RoleRepository roleRepository,
+
+            EmailService mailService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.mailService = mailService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Check if the email exists in the database
@@ -30,12 +48,60 @@ public class UserService {
         return this.userRepository.existsByEmail(email);
     }
 
-    // CRUD
-    // Create a new user
     public User handleCreateNewUser(User newUser) {
-        return this.userRepository.save(newUser);
+
+        newUser.setStatus(true);
+        newUser.setCode(CodeUtil.generateVerificationCode());
+        newUser.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes expiration
+        User savedUser = userRepository.save(newUser);
+        mailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getCode());
+        return savedUser;
     }
 
+    public User handleRegisterNewUser(User newUser) {
+        Role normalUserRole = roleRepository.findByName("NORMAL_USER");
+        if (normalUserRole != null) {
+            newUser.setRole(normalUserRole);
+        }
+        newUser.setStatus(false);
+        newUser.setCode(CodeUtil.generateVerificationCode());
+        newUser.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes expiration
+        User savedUser = userRepository.save(newUser);
+        mailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getCode());
+        return savedUser;
+    }
+
+    // public void verifyCode(VerifyCodeDTO verifyCodeDTO) throws IdInvalidException
+    // {
+    // User user = userRepository.findByEmail(verifyCodeDTO.getEmail());
+
+    // if (!user.getCode().equals(verifyCodeDTO.getCode())) {
+    // throw new IdInvalidException(
+    // "Verification code " + verifyCodeDTO.getCode() + " is not correct, please try
+    // again");
+    // }
+
+    // if (user.getCodeExpired().isBefore(Instant.now())) {
+    // throw new IdInvalidException("Verification code has expired, please request a
+    // new one");
+    // }
+
+    // user.setStatus(true);
+    // userRepository.save(user);
+    // }
+
+    // public void verifyEmail(VerifyEmailDTO verifyEmailDTO) throws
+    // IdInvalidException {
+    // User user = userRepository.findByEmail(verifyEmailDTO.getEmail());
+    // String newCode = CodeUtil.generateVerificationCode();
+    // user.setCode(newCode);
+    // user.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes
+    // expiration
+    // this.mailService.sendVerificationEmail(user.getEmail(), newCode);
+    // this.userRepository.save(user);
+    // }
+
+    // verify code
     // Fetch user by id
     public User handleFetchUserById(long id) {
         Optional<User> userOptional = this.userRepository.findById(id);
@@ -114,6 +180,7 @@ public class UserService {
         res.setPhoneNumber(user.getPhoneNumber());
         res.setAvatar(user.getAvatar());
         res.setCreatedAt(user.getCreatedAt());
+        res.setCodeExpired(user.getCodeExpired());
         return res;
     }
 
@@ -148,5 +215,96 @@ public class UserService {
 
     public User handleGetUserByUsername(String userName) {
         return this.userRepository.findByEmail(userName);
+    }
+
+    // verify email
+    public void verifyEmail(VerifyEmailDTO verifyEmailDTO) throws IdInvalidException {
+        String email = verifyEmailDTO.getEmail();
+
+        if (!isValidEmail(email)) {
+            throw new IdInvalidException("Định dạng email không hợp lệ");
+        }
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+
+            throw new IdInvalidException("Email chưa được đăng ký");
+        }
+
+        String newCode = CodeUtil.generateVerificationCode();
+        user.setCode(newCode);
+        user.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 phút hết hạn
+        user.setStatus(false); // Đặt trạng thái để yêu cầu xác minh OTP
+        userRepository.save(user);
+
+        try {
+            mailService.sendVerificationEmail(user.getEmail(), newCode);
+
+        } catch (Exception e) {
+
+            throw new IdInvalidException("Không thể gửi email xác minh, vui lòng thử lại sau");
+        }
+    }
+
+    // Verify code
+    public void verifyCode(VerifyCodeDTO verifyCodeDTO) throws IdInvalidException {
+        String email = verifyCodeDTO.getEmail();
+        String code = verifyCodeDTO.getCode();
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+
+            throw new IdInvalidException("Email chưa được đăng ký");
+        }
+
+        if (user.getCode() == null || !user.getCode().equals(code)) {
+
+            throw new IdInvalidException("Mã xác minh " + code + " không đúng, vui lòng thử lại");
+        }
+
+        if (user.getCodeExpired().isBefore(Instant.now())) {
+
+            throw new IdInvalidException("Mã xác minh đã hết hạn, vui lòng yêu cầu mã mới");
+        }
+
+        user.setStatus(true); // Đánh dấu OTP đã được xác minh
+        userRepository.save(user);
+
+    }
+
+    // change password
+    public void resetPassword(String email, String verificationCode, String newPassword) throws IdInvalidException {
+
+        if (!isValidEmail(email)) {
+            throw new IdInvalidException("Định dạng email không hợp lệ");
+        }
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+
+            throw new IdInvalidException("Email chưa được đăng ký");
+        }
+
+        if (!user.isStatus()) {
+
+            throw new IdInvalidException("Mã OTP chưa được xác minh. Vui lòng xác minh OTP trước khi đặt lại mật khẩu");
+        }
+
+        if (user.getCode() == null || !user.getCode().equals(verificationCode)
+                || user.getCodeExpired().isBefore(Instant.now())) {
+
+            throw new IdInvalidException("Mã xác minh không hợp lệ hoặc đã hết hạn");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword)); // Mã hóa mật khẩu
+        user.setCode(null); // Xóa mã OTP
+        user.setCodeExpired(null);
+        user.setStatus(false); // Đặt lại trạng thái để yêu cầu xác minh mới
+        userRepository.save(user);
+    }
+
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+        return email != null && email.matches(emailRegex);
     }
 }

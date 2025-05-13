@@ -188,13 +188,13 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(
                         authz -> authz
-                                .requestMatchers(whiteList).permitAll()
-                                .requestMatchers("/api/v1/callback/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/train-trips/**").permitAll()
-                                .anyRequest().authenticated())
+                                // .requestMatchers(whiteList).permitAll()
+                                // .requestMatchers("/api/v1/callback/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/carriages/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/stations/**").permitAll()
+                                // .requestMatchers(HttpMethod.GET, "/api/v1/train-trips/**").permitAll()
+                                .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(customAuthenticationEntryPoint))

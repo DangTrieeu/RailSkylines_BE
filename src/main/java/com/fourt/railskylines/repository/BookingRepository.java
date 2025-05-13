@@ -26,4 +26,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBookingIdWithTickets(@Param("bookingId") Long bookingId);
 
     Optional<Booking> findByBookingCodeAndVnpTxnRef(String bookingCode, String vnpTxnRef);
+
+    List<Booking> findByDateBetweenAndPaymentStatusIn(Instant startDate, Instant endDate, List<PaymentStatusEnum> statuses);
 }

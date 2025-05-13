@@ -300,6 +300,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             arr.add(new Permission("Update a seat", "/api/v1/seats/{id}", "PUT", "SEATS")); // Đã sửa
             arr.add(new Permission("Delete a seat", "/api/v1/seats/{id}", "DELETE", "SEATS"));
             arr.add(new Permission("Get a seat by id", "/api/v1/seats/{id}", "GET", "SEATS"));
+            arr.add(new Permission("Get a seat available", "/api/v1/seats/available", "GET", "SEATS"));
             arr.add(new Permission("Get seats with pagination", "/api/v1/seats", "GET", "SEATS"));
 
             // Station Permissions

@@ -82,12 +82,19 @@ public class BookingService {
 
     @Transactional
     public Booking createBooking(BookingRequestDTO request, HttpServletRequest httpServletRequest) {
-        String email = SecurityUtil.getCurrentUserLogin()
-                .orElseThrow(() -> new RuntimeException("User must be logged in to create a booking"));
+        User user = null;
+        String email = SecurityUtil.getCurrentUserLogin().orElse(null);
 
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
-            throw new RuntimeException("User not found for email: " + email);
+        if (email != null) {
+            user = userRepository.findByEmail(email);
+            if (user == null) {
+                throw new RuntimeException("User not found for email: " + email);
+            }
+        }
+
+        // Nếu không có user, đảm bảo contactEmail được cung cấp
+        if (user == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
+            throw new RuntimeException("Contact email is required for non-registered users");
         }
 
         Long trainTripId = request.getTrainTripId();
@@ -126,6 +133,11 @@ public class BookingService {
             }
         }
 
+        // Tạo danh sách đầy đủ các ga: originStation + journey
+        List<Station> allStations = new ArrayList<>();
+        allStations.add(route.getOriginStation());
+        allStations.addAll(route.getJourney());
+
         for (int i = 0; i < request.getTickets().size(); i++) {
             TicketRequestDTO ticketDTO = request.getTickets().get(i);
             Seat seat = seats.get(i);
@@ -159,22 +171,23 @@ public class BookingService {
                 }
             }
 
-            List<Station> routeStations = route.getJourney();
-            List<Long> stationIdsInRoute = routeStations.stream()
-                    .map(Station::getStationId)
-                    .collect(Collectors.toList());
-            if (!stationIdsInRoute.contains(boardingStation.getStationId()) ||
-                    !stationIdsInRoute.contains(alightingStation.getStationId())) {
+            // Kiểm tra xem boardingStation và alightingStation có trong danh sách các ga hay không
+            if (!allStations.contains(boardingStation) || !allStations.contains(alightingStation)) {
                 throw new RuntimeException("Ga lên hoặc xuống không thuộc lộ trình của chuyến tàu");
             }
 
-            int boardingOrder = (int) Math.round(boardingStation.getPosition());
-            int alightingOrder = (int) Math.round(alightingStation.getPosition());
-
-            if (boardingOrder >= alightingOrder) {
+            // Kiểm tra thứ tự ga: boardingStation phải trước alightingStation
+            int boardingIndex = allStations.indexOf(boardingStation);
+            int alightingIndex = allStations.indexOf(alightingStation);
+            if (boardingIndex >= alightingIndex) {
                 throw new RuntimeException("Ga lên tàu phải trước ga xuống tàu");
             }
 
+            // Gán boardingOrder và alightingOrder dựa trên index trong allStations
+            int boardingOrder = boardingIndex;
+            int alightingOrder = alightingIndex;
+
+            // Kiểm tra ghế khả dụng cho đoạn đường
             logger.info("Checking seat {} for trainTripId {}, boardingOrder {}, alightingOrder {}",
                     seat.getSeatId(), trainTripId, boardingOrder, alightingOrder);
             List<Seat> availableSeats = seatRepository.findAvailableSeatsForSegment(
@@ -216,7 +229,7 @@ public class BookingService {
         booking.setDate(Instant.now());
         booking.setPaymentType(request.getPaymentType());
         booking.setVnpTxnRef(booking.getBookingCode());
-        booking.setUser(user);
+        booking.setUser(user); // Có thể là null cho người không đăng ký
 
         booking = bookingRepository.save(booking);
 
@@ -240,8 +253,8 @@ public class BookingService {
 
             Station boardingStation = stationRepository.findById(ticketDTO.getBoardingStationId()).orElseThrow();
             Station alightingStation = stationRepository.findById(ticketDTO.getAlightingStationId()).orElseThrow();
-            ticket.setBoardingOrder((int) Math.round(boardingStation.getPosition()));
-            ticket.setAlightingOrder((int) Math.round(alightingStation.getPosition()));
+            ticket.setBoardingOrder(allStations.indexOf(boardingStation));
+            ticket.setAlightingOrder(allStations.indexOf(alightingStation));
 
             tickets.add(ticket);
         }
