@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -150,6 +151,48 @@ public class BookingController {
             response.setData(null);
             response.setError("Invalid request");
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+    }
+    @GetMapping("/bookings")
+    public ResponseEntity<RestResponse<List<Booking>>> getAllBookings() {
+        String email = SecurityUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new RuntimeException("User not authenticated"));
+
+        try {
+            List<Booking> bookings = bookingService.getAllBookings();
+            RestResponse<List<Booking>> response = new RestResponse<>();
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("All bookings retrieved successfully");
+            response.setData(bookings);
+            response.setError(null);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            RestResponse<List<Booking>> response = new RestResponse<>();
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            response.setError("Invalid request");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/bookings/{id}")
+    public ResponseEntity<RestResponse<Booking>> getBookingById(@PathVariable("id") Long id) {
+        try {
+            Booking booking = bookingService.getBookingById(id);
+            RestResponse<Booking> response = new RestResponse<>();
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("Booking retrieved successfully");
+            response.setData(booking);
+            response.setError(null);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            RestResponse<Booking> response = new RestResponse<>();
+            response.setStatusCode(HttpStatus.NOT_FOUND.value());
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            response.setError("Booking not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
     }
 }

@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class PromotionService {
@@ -62,7 +61,6 @@ public class PromotionService {
                 ? PromotionStatusEnum.active
                 : PromotionStatusEnum.inactive);
         promotion = promotionRepository.save(promotion);
-        updateAllPromotionStatuses();
         return mapToDTO(promotion);
     }
 
@@ -70,28 +68,9 @@ public class PromotionService {
         return promotionRepository.findAll(specification, pageable);
     }
 
-    public List<ReqPromotionDTO> getAllActivePromotions() {
-        Instant now = Instant.now();
-        return promotionRepository.findByStatusAndStartDateBeforeAndValidityAfter(
-                PromotionStatusEnum.active, now, now)
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public List<ReqPromotionDTO> getAllExpiredPromotions() {
-        Instant now = Instant.now();
-        return promotionRepository.findByStatusAndValidityBefore(
-                PromotionStatusEnum.expired, now)
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
     public ReqPromotionDTO getPromotionById(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Promotion not found"));
-        updatePromotionStatus(promotion);
         return mapToDTO(promotion);
     }
 
@@ -122,9 +101,6 @@ public class PromotionService {
                             : PromotionStatusEnum.inactive);
         }
         promotion = promotionRepository.save(promotion);
-        if (promotionDTO.getStartDate() != null || promotionDTO.getValidity() != null) {
-            updateAllPromotionStatuses(); // Cập nhật ngay nếu startDate hoặc validity thay đổi
-        }
         return mapToDTO(promotion);
     }
 
@@ -133,17 +109,6 @@ public class PromotionService {
             throw new RuntimeException("Promotion not found");
         }
         promotionRepository.deleteById(id);
-    }
-
-    public ReqPromotionDTO updatePromotionStatusManually(Long id, PromotionStatusEnum status) {
-        Promotion promotion = promotionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Promotion not found"));
-        if (status == null) {
-            throw new IllegalArgumentException("Status cannot be null");
-        }
-        promotion.setStatus(status);
-        promotion = promotionRepository.save(promotion);
-        return mapToDTO(promotion);
     }
 
     @Scheduled(cron = "0 * * * * ?")
@@ -159,18 +124,6 @@ public class PromotionService {
                 promotion.setStatus(newStatus);
                 promotionRepository.save(promotion);
             }
-        }
-    }
-
-    private void updatePromotionStatus(Promotion promotion) {
-        Instant now = Instant.now();
-        PromotionStatusEnum newStatus = now.isAfter(promotion.getValidity()) ? PromotionStatusEnum.expired
-                : now.isAfter(promotion.getStartDate()) && now.isBefore(promotion.getValidity())
-                        ? PromotionStatusEnum.active
-                        : PromotionStatusEnum.inactive;
-        if (promotion.getStatus() != newStatus) {
-            promotion.setStatus(newStatus);
-            promotionRepository.save(promotion);
         }
     }
 

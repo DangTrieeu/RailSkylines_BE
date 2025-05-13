@@ -43,10 +43,10 @@ public class BookingService {
     private final TrainTripRepository trainTripRepository;
 
     public BookingService(SeatRepository seatRepository, BookingRepository bookingRepository,
-                         TicketRepository ticketRepository, PromotionRepository promotionRepository,
-                         UserRepository userRepository, NotificationService notificationService,
-                         PaymentService paymentService, ObjectMapper objectMapper,
-                         StationRepository stationRepository, TrainTripRepository trainTripRepository) {
+            TicketRepository ticketRepository, PromotionRepository promotionRepository,
+            UserRepository userRepository, NotificationService notificationService,
+            PaymentService paymentService, ObjectMapper objectMapper,
+            StationRepository stationRepository, TrainTripRepository trainTripRepository) {
         this.seatRepository = seatRepository;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
@@ -85,14 +85,16 @@ public class BookingService {
         User user = null;
         String email = SecurityUtil.getCurrentUserLogin().orElse(null);
 
+        // Kiểm tra nếu có email từ SecurityUtil (người dùng đã đăng nhập)
         if (email != null) {
             user = userRepository.findByEmail(email);
-            if (user == null) {
-                throw new RuntimeException("User not found for email: " + email);
-            }
+            // Không ném ngoại lệ nếu user không tìm thấy, vì có thể người dùng đã đăng nhập
+            // nhưng tài khoản bị xóa
+            // hoặc hệ thống sử dụng email khác để xác thực
         }
 
-        // Nếu không có user, đảm bảo contactEmail được cung cấp
+        // Nếu không có user (người không đăng ký hoặc user không tìm thấy), yêu cầu
+        // contactEmail
         if (user == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
             throw new RuntimeException("Contact email is required for non-registered users");
         }
@@ -115,7 +117,8 @@ public class BookingService {
 
         for (Seat seat : seats) {
             if (!seat.getCarriage().getTrain().equals(train)) {
-                throw new RuntimeException("Ghế " + seat.getSeatId() + " không thuộc chuyến tàu của TrainTrip " + trainTripId);
+                throw new RuntimeException(
+                        "Ghế " + seat.getSeatId() + " không thuộc chuyến tàu của TrainTrip " + trainTripId);
             }
         }
 
@@ -159,7 +162,8 @@ public class BookingService {
                 Object alightingStationIdObj = ticketParam.get("alightingStationId");
 
                 if (!(boardingStationIdObj instanceof Number) || !(alightingStationIdObj instanceof Number)) {
-                    throw new RuntimeException("Invalid boardingStationId or alightingStationId in ticketsParam at index " + i);
+                    throw new RuntimeException(
+                            "Invalid boardingStationId or alightingStationId in ticketsParam at index " + i);
                 }
 
                 Long boardingStationIdFromParam = ((Number) boardingStationIdObj).longValue();
@@ -171,7 +175,8 @@ public class BookingService {
                 }
             }
 
-            // Kiểm tra xem boardingStation và alightingStation có trong danh sách các ga hay không
+            // Kiểm tra xem boardingStation và alightingStation có trong danh sách các ga
+            // hay không
             if (!allStations.contains(boardingStation) || !allStations.contains(alightingStation)) {
                 throw new RuntimeException("Ga lên hoặc xuống không thuộc lộ trình của chuyến tàu");
             }
@@ -224,12 +229,13 @@ public class BookingService {
 
         Booking booking = new Booking();
         booking.setPaymentStatus(PaymentStatusEnum.pending);
-        booking.setContactEmail(request.getContactEmail());
+        booking.setContactEmail(user != null ? user.getEmail() : request.getContactEmail()); // Sử dụng email của user
+                                                                                             // nếu có
         booking.setContactPhone(request.getContactPhone());
         booking.setDate(Instant.now());
         booking.setPaymentType(request.getPaymentType());
         booking.setVnpTxnRef(booking.getBookingCode());
-        booking.setUser(user); // Có thể là null cho người không đăng ký
+        booking.setUser(user); // user có thể là null cho người không đăng ký
 
         booking = bookingRepository.save(booking);
 
@@ -431,13 +437,16 @@ public class BookingService {
                     .filter(trip -> {
                         List<Station> journey = trip.getRoute().getJourney();
                         boolean hasBoarding = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket.getBoardingOrder());
+                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket
+                                        .getBoardingOrder());
                         boolean hasAlighting = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket.getAlightingOrder());
+                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket
+                                        .getAlightingOrder());
                         return hasBoarding && hasAlighting;
                     })
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("TrainTrip not found for ticket: " + firstTicket.getTicketCode()));
+                    .orElseThrow(() -> new RuntimeException(
+                            "TrainTrip not found for ticket: " + firstTicket.getTicketCode()));
 
             Route route = trainTrip.getRoute();
             List<Station> journey = route.getJourney();
@@ -453,11 +462,13 @@ public class BookingService {
                 Station boardingStation = journey.stream()
                         .filter(station -> (int) Math.round(station.getPosition()) == ticket.getBoardingOrder())
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Boarding station not found for order: " + ticket.getBoardingOrder()));
+                        .orElseThrow(() -> new RuntimeException(
+                                "Boarding station not found for order: " + ticket.getBoardingOrder()));
                 Station alightingStation = journey.stream()
                         .filter(station -> (int) Math.round(station.getPosition()) == ticket.getAlightingOrder())
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Alighting station not found for order: " + ticket.getAlightingOrder()));
+                        .orElseThrow(() -> new RuntimeException(
+                                "Alighting station not found for order: " + ticket.getAlightingOrder()));
 
                 ticketDto.setBoardingStationName(boardingStation.getStationName());
                 ticketDto.setAlightingStationName(alightingStation.getStationName());
@@ -477,11 +488,33 @@ public class BookingService {
     }
 
     /**
-     * Find a booking by booking code and VNP transaction reference, no user authentication required.
+     * Find a booking by booking code and VNP transaction reference, no user
+     * authentication required.
      */
     public Booking findBookingByCodeAndVnpTxnRef(String bookingCode, String vnpTxnRef) {
         Booking booking = bookingRepository.findByBookingCodeAndVnpTxnRef(bookingCode, vnpTxnRef)
-                .orElseThrow(() -> new RuntimeException("Booking not found or VNP transaction reference does not match"));
+                .orElseThrow(
+                        () -> new RuntimeException("Booking not found or VNP transaction reference does not match"));
         return booking;
+    }
+        /**
+     * Retrieve all bookings from the repository.
+     */
+    public List<Booking> getAllBookings() {
+        List<Booking> bookings = bookingRepository.findAll();
+        if (bookings.isEmpty()) {
+            logger.info("No bookings found in the repository");
+        } else {
+            logger.info("Retrieved {} bookings", bookings.size());
+        }
+        return bookings;
+    }
+
+    /**
+     * Retrieve a booking by its ID.
+     */
+    public Booking getBookingById(Long id) {
+        return bookingRepository.findByBookingId(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + id));
     }
 }
