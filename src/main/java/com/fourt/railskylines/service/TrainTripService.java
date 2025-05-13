@@ -377,4 +377,5 @@ public class TrainTripService {
     private boolean isFourBedsLevel1(int seatNumber) {
         return (seatNumber % 4 == 3 || seatNumber % 4 == 0);
     }
+
 }

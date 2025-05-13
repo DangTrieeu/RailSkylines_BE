@@ -30,4 +30,5 @@ public class TicketController {
         Booking booking = ticketService.findBookingByCodeAndCitizenId(bookingCode, citizenId);
         return ResponseEntity.ok(booking);
     }
+
 }

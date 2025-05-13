@@ -2,6 +2,7 @@ package com.fourt.railskylines.domain;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.SeatTypeEnum;
 
@@ -36,6 +37,7 @@ public class Seat {
     private double price;
 
     @OneToMany(mappedBy = "seat")
+    @JsonIgnore
     private List<Ticket> tickets;
 
     @ManyToOne
