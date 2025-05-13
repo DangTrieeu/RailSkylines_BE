@@ -5,6 +5,8 @@ import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.domain.request.TicketRequestDTO;
 import com.fourt.railskylines.domain.response.ResBookingHistoryDTO;
 import com.fourt.railskylines.domain.response.ResTicketHistoryDTO;
+import com.fourt.railskylines.domain.response.ResUserDTO;
+import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.*;
 import com.fourt.railskylines.util.SecurityUtil;
 import com.fourt.railskylines.util.constant.CustomerObjectEnum;
@@ -18,6 +20,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -408,7 +413,7 @@ public class BookingService {
     public List<ResBookingHistoryDTO> getBookingHistoryByUser(String email) {
         User user = userRepository.findByEmail(email);
         if (user == null) {
-            throw new RuntimeException("User not found");
+            throw new RuntimeException("Người dùng không tồn tại");
         }
 
         List<Booking> bookings = bookingRepository.findByUser(user);
@@ -424,7 +429,8 @@ public class BookingService {
 
             List<Ticket> tickets = booking.getTickets();
             if (tickets.isEmpty()) {
-                throw new RuntimeException("No tickets found for booking: " + booking.getBookingCode());
+                logger.warn("Không tìm thấy vé cho booking: {}", booking.getBookingCode());
+                return dto; // Trả về DTO với dữ liệu booking nhưng không có vé
             }
 
             Ticket firstTicket = tickets.get(0);
@@ -433,23 +439,32 @@ public class BookingService {
             Train train = carriage.getTrain();
             List<TrainTrip> trainTrips = train.getTrip();
 
+            // Tìm TrainTrip phù hợp
             TrainTrip trainTrip = trainTrips.stream()
                     .filter(trip -> {
-                        List<Station> journey = trip.getRoute().getJourney();
-                        boolean hasBoarding = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket
-                                        .getBoardingOrder());
-                        boolean hasAlighting = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == firstTicket
-                                        .getAlightingOrder());
-                        return hasBoarding && hasAlighting;
+                        // Tạo danh sách ga đầy đủ: originStation + journey
+                        List<Station> allStations = new ArrayList<>();
+                        allStations.add(trip.getRoute().getOriginStation());
+                        allStations.addAll(trip.getRoute().getJourney());
+                        // Kiểm tra xem boardingOrder và alightingOrder có hợp lệ
+                        return firstTicket.getBoardingOrder() >= 0 &&
+                                firstTicket.getBoardingOrder() < allStations.size() &&
+                                firstTicket.getAlightingOrder() > firstTicket.getBoardingOrder() &&
+                                firstTicket.getAlightingOrder() < allStations.size();
                     })
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException(
-                            "TrainTrip not found for ticket: " + firstTicket.getTicketCode()));
+                    .orElse(null);
+
+            if (trainTrip == null) {
+                logger.warn("Không tìm thấy TrainTrip cho vé: {}", firstTicket.getTicketCode());
+                return dto; // Trả về DTO với dữ liệu booking nhưng không có thông tin TrainTrip
+            }
 
             Route route = trainTrip.getRoute();
-            List<Station> journey = route.getJourney();
+            // Tạo danh sách ga đầy đủ
+            List<Station> allStations = new ArrayList<>();
+            allStations.add(route.getOriginStation());
+            allStations.addAll(route.getJourney());
 
             List<ResTicketHistoryDTO> ticketDtos = tickets.stream().map(ticket -> {
                 ResTicketHistoryDTO ticketDto = new ResTicketHistoryDTO();
@@ -459,19 +474,18 @@ public class BookingService {
                 ticketDto.setName(ticket.getName());
                 ticketDto.setCitizenId(ticket.getCitizenId());
 
-                Station boardingStation = journey.stream()
-                        .filter(station -> (int) Math.round(station.getPosition()) == ticket.getBoardingOrder())
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException(
-                                "Boarding station not found for order: " + ticket.getBoardingOrder()));
-                Station alightingStation = journey.stream()
-                        .filter(station -> (int) Math.round(station.getPosition()) == ticket.getAlightingOrder())
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException(
-                                "Alighting station not found for order: " + ticket.getAlightingOrder()));
-
-                ticketDto.setBoardingStationName(boardingStation.getStationName());
-                ticketDto.setAlightingStationName(alightingStation.getStationName());
+                // Lấy ga lên và ga xuống dựa trên boardingOrder và alightingOrder
+                if (ticket.getBoardingOrder() >= 0 && ticket.getBoardingOrder() < allStations.size() &&
+                        ticket.getAlightingOrder() >= 0 && ticket.getAlightingOrder() < allStations.size()) {
+                    Station boardingStation = allStations.get(ticket.getBoardingOrder());
+                    Station alightingStation = allStations.get(ticket.getAlightingOrder());
+                    ticketDto.setBoardingStationName(boardingStation.getStationName());
+                    ticketDto.setAlightingStationName(alightingStation.getStationName());
+                } else {
+                    logger.warn(
+                            "boardingOrder hoặc alightingOrder không hợp lệ cho vé: {}, boardingOrder={}, alightingOrder={}",
+                            ticket.getTicketCode(), ticket.getBoardingOrder(), ticket.getAlightingOrder());
+                }
 
                 ticketDto.setCarriageName(carriage.getCarriageType().toString());
                 ticketDto.setTrainName(train.getTrainName());
@@ -497,7 +511,8 @@ public class BookingService {
                         () -> new RuntimeException("Booking not found or VNP transaction reference does not match"));
         return booking;
     }
-        /**
+
+    /**
      * Retrieve all bookings from the repository.
      */
     public List<Booking> getAllBookings() {
@@ -509,7 +524,29 @@ public class BookingService {
         }
         return bookings;
     }
+    // Fetch all users
+    // public ResultPaginationDTO getAllBookings(Specification<User> spec, Pageable
+    // pageable) {
+    // Page<User> pageBookings = this.userRepository.findAll(spec, pageable);
+    // ResultPaginationDTO res = new ResultPaginationDTO();
+    // ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
 
+    // meta.setPage(pageable.getPageNumber() + 1);
+    // meta.setPageSize(pageable.getPageSize());
+
+    // meta.setPages(pageBookings.getTotalPages());
+    // meta.setTotal(pageBookings.getTotalElements());
+
+    // res.setMeta(meta);
+
+    // // remove sensitive data
+    // List<ResUserDTO> listUser = pageBookings.getContent()
+    // .stream().map(item -> this.convertToResUserDTO(item))
+    // .collect(Collectors.toList());
+
+    // res.setResult(listUser);
+    // return res;
+    // }
     /**
      * Retrieve a booking by its ID.
      */

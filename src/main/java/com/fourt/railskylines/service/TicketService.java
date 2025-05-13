@@ -5,8 +5,11 @@ import com.fourt.railskylines.domain.response.ResTicketHistoryDTO;
 import com.fourt.railskylines.repository.TicketRepository;
 import com.fourt.railskylines.repository.UserRepository;
 import com.fourt.railskylines.util.SecurityUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,6 +17,7 @@ import java.util.stream.Collectors;
 public class TicketService {
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
 
     public TicketService(TicketRepository ticketRepository, UserRepository userRepository) {
         this.ticketRepository = ticketRepository;
@@ -29,12 +33,13 @@ public class TicketService {
     }
 
     /**
-     * Retrieve ticket history for the authenticated user, formatted as ResTicketHistoryDTO.
+     * Retrieve ticket history for the authenticated user, formatted as
+     * ResTicketHistoryDTO.
      */
     public List<ResTicketHistoryDTO> getTicketHistoryByUser(String email) {
         User user = userRepository.findByEmail(email);
         if (user == null) {
-            throw new RuntimeException("User not found");
+            throw new RuntimeException("Người dùng không tồn tại");
         }
 
         List<Ticket> tickets = ticketRepository.findByOwner(user);
@@ -49,37 +54,50 @@ public class TicketService {
             Seat seat = ticket.getSeat();
             Carriage carriage = seat.getCarriage();
             Train train = carriage.getTrain();
-            dto.setCarriageName(carriage.getCarriageType().toString());
-            dto.setTrainName(train.getTrainName());
-
-            Booking booking = ticket.getBooking();
             List<TrainTrip> trainTrips = train.getTrip();
+
+            // Tìm TrainTrip phù hợp
             TrainTrip trainTrip = trainTrips.stream()
                     .filter(trip -> {
-                        List<Station> journey = trip.getRoute().getJourney();
-                        boolean hasBoarding = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == ticket.getBoardingOrder());
-                        boolean hasAlighting = journey.stream()
-                                .anyMatch(station -> (int) Math.round(station.getPosition()) == ticket.getAlightingOrder());
-                        return hasBoarding && hasAlighting;
+                        // Tạo danh sách ga đầy đủ: originStation + journey
+                        List<Station> allStations = new ArrayList<>();
+                        allStations.add(trip.getRoute().getOriginStation());
+                        allStations.addAll(trip.getRoute().getJourney());
+                        // Kiểm tra xem boardingOrder và alightingOrder có hợp lệ
+                        return ticket.getBoardingOrder() >= 0 &&
+                                ticket.getBoardingOrder() < allStations.size() &&
+                                ticket.getAlightingOrder() > ticket.getBoardingOrder() &&
+                                ticket.getAlightingOrder() < allStations.size();
                     })
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("TrainTrip not found for ticket: " + ticket.getTicketCode()));
+                    .orElse(null);
+
+            if (trainTrip == null) {
+                logger.warn("Không tìm thấy TrainTrip cho vé: {}", ticket.getTicketCode());
+                return dto; // Trả về DTO với dữ liệu vé nhưng không có thông tin TrainTrip
+            }
 
             Route route = trainTrip.getRoute();
-            List<Station> journey = route.getJourney();
+            // Tạo danh sách ga đầy đủ
+            List<Station> allStations = new ArrayList<>();
+            allStations.add(route.getOriginStation());
+            allStations.addAll(route.getJourney());
 
-            Station boardingStation = journey.stream()
-                    .filter(station -> (int) Math.round(station.getPosition()) == ticket.getBoardingOrder())
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Boarding station not found for order: " + ticket.getBoardingOrder()));
-            Station alightingStation = journey.stream()
-                    .filter(station -> (int) Math.round(station.getPosition()) == ticket.getAlightingOrder())
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Alighting station not found for order: " + ticket.getAlightingOrder()));
+            // Lấy ga lên và ga xuống dựa trên boardingOrder và alightingOrder
+            if (ticket.getBoardingOrder() >= 0 && ticket.getBoardingOrder() < allStations.size() &&
+                    ticket.getAlightingOrder() >= 0 && ticket.getAlightingOrder() < allStations.size()) {
+                Station boardingStation = allStations.get(ticket.getBoardingOrder());
+                Station alightingStation = allStations.get(ticket.getAlightingOrder());
+                dto.setBoardingStationName(boardingStation.getStationName());
+                dto.setAlightingStationName(alightingStation.getStationName());
+            } else {
+                logger.warn(
+                        "boardingOrder hoặc alightingOrder không hợp lệ cho vé: {}, boardingOrder={}, alightingOrder={}",
+                        ticket.getTicketCode(), ticket.getBoardingOrder(), ticket.getAlightingOrder());
+            }
 
-            dto.setBoardingStationName(boardingStation.getStationName());
-            dto.setAlightingStationName(alightingStation.getStationName());
+            dto.setCarriageName(carriage.getCarriageType().toString());
+            dto.setTrainName(train.getTrainName());
 
             Schedule schedule = trainTrip.getSchedule();
             dto.setStartDay(schedule.getDeparture().getDate());
@@ -90,5 +108,5 @@ public class TicketService {
     /**
      * Update ticket information.
      */
-    
+
 }
