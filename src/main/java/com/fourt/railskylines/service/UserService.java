@@ -53,6 +53,7 @@ public class UserService {
         newUser.setStatus(true);
         newUser.setCode(CodeUtil.generateVerificationCode());
         newUser.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes expiration
+
         User savedUser = userRepository.save(newUser);
         mailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getCode());
         return savedUser;
@@ -70,36 +71,6 @@ public class UserService {
         mailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getCode());
         return savedUser;
     }
-
-    // public void verifyCode(VerifyCodeDTO verifyCodeDTO) throws IdInvalidException
-    // {
-    // User user = userRepository.findByEmail(verifyCodeDTO.getEmail());
-
-    // if (!user.getCode().equals(verifyCodeDTO.getCode())) {
-    // throw new IdInvalidException(
-    // "Verification code " + verifyCodeDTO.getCode() + " is not correct, please try
-    // again");
-    // }
-
-    // if (user.getCodeExpired().isBefore(Instant.now())) {
-    // throw new IdInvalidException("Verification code has expired, please request a
-    // new one");
-    // }
-
-    // user.setStatus(true);
-    // userRepository.save(user);
-    // }
-
-    // public void verifyEmail(VerifyEmailDTO verifyEmailDTO) throws
-    // IdInvalidException {
-    // User user = userRepository.findByEmail(verifyEmailDTO.getEmail());
-    // String newCode = CodeUtil.generateVerificationCode();
-    // user.setCode(newCode);
-    // user.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes
-    // expiration
-    // this.mailService.sendVerificationEmail(user.getEmail(), newCode);
-    // this.userRepository.save(user);
-    // }
 
     // verify code
     // Fetch user by id
@@ -216,58 +187,29 @@ public class UserService {
     }
 
     // verify email
-    public void verifyEmail(VerifyEmailDTO verifyEmailDTO) throws IdInvalidException {
-        String email = verifyEmailDTO.getEmail();
-
-        if (!isValidEmail(email)) {
-            throw new IdInvalidException("Định dạng email không hợp lệ");
-        }
-
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
-
-            throw new IdInvalidException("Email chưa được đăng ký");
-        }
-
-        String newCode = CodeUtil.generateVerificationCode();
-        user.setCode(newCode);
-        user.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 phút hết hạn
-        user.setStatus(false); // Đặt trạng thái để yêu cầu xác minh OTP
-        userRepository.save(user);
-
-        try {
-            mailService.sendVerificationEmail(user.getEmail(), newCode);
-
-        } catch (Exception e) {
-
-            throw new IdInvalidException("Không thể gửi email xác minh, vui lòng thử lại sau");
-        }
-    }
-
-    // Verify code
     public void verifyCode(VerifyCodeDTO verifyCodeDTO) throws IdInvalidException {
-        String email = verifyCodeDTO.getEmail();
-        String code = verifyCodeDTO.getCode();
+        User user = userRepository.findByEmail(verifyCodeDTO.getEmail());
 
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
-
-            throw new IdInvalidException("Email chưa được đăng ký");
-        }
-
-        if (user.getCode() == null || !user.getCode().equals(code)) {
-
-            throw new IdInvalidException("Mã xác minh " + code + " không đúng, vui lòng thử lại");
+        if (!user.getCode().equals(verifyCodeDTO.getCode())) {
+            throw new IdInvalidException(
+                    "Verification code " + verifyCodeDTO.getCode() + " is not correct, please try again");
         }
 
         if (user.getCodeExpired().isBefore(Instant.now())) {
-
-            throw new IdInvalidException("Mã xác minh đã hết hạn, vui lòng yêu cầu mã mới");
+            throw new IdInvalidException("Verification code has expired, please request a new one");
         }
 
-        user.setStatus(true); // Đánh dấu OTP đã được xác minh
+        user.setStatus(true);
         userRepository.save(user);
+    }
 
+    public void verifyEmail(VerifyEmailDTO verifyEmailDTO) throws IdInvalidException {
+        User user = userRepository.findByEmail(verifyEmailDTO.getEmail());
+        String newCode = CodeUtil.generateVerificationCode();
+        user.setCode(newCode);
+        user.setCodeExpired(Instant.now().plusSeconds(5 * 60)); // 5 minutes expiration
+        this.mailService.sendVerificationEmail(user.getEmail(), newCode);
+        this.userRepository.save(user);
     }
 
     // change password
@@ -281,11 +223,6 @@ public class UserService {
         if (user == null) {
 
             throw new IdInvalidException("Email chưa được đăng ký");
-        }
-
-        if (!user.isStatus()) {
-
-            throw new IdInvalidException("Mã OTP chưa được xác minh. Vui lòng xác minh OTP trước khi đặt lại mật khẩu");
         }
 
         if (user.getCode() == null || !user.getCode().equals(verificationCode)

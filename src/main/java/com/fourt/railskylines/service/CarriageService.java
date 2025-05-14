@@ -66,78 +66,10 @@ public class CarriageService {
         // Save carriage to generate ID
         Carriage savedCarriage = carriageRepository.save(carriage);
 
-        // Determine number of seats based on carriage type
-        int seatCount = switch (carriage.getCarriageType()) {
-            case sixBeds -> 42;
-            case fourBeds -> 28;
-            case seat -> 56;
-        };
-
-        // Create seats with seat type and price based on seat number
-        List<Seat> seats = new ArrayList<>();
-        for (int i = 1; i <= seatCount; i++) {
-            Seat seat = new Seat();
-            seat.setSeatStatus(SeatStatusEnum.available);
-            seat.setCarriage(savedCarriage);
-
-            // Assign seat type based on carriage type and seat number
-            SeatTypeEnum seatType;
-            double price;
-            switch (carriage.getCarriageType()) {
-                case sixBeds:
-                    if (isSixBedsLevel3(i)) {
-                        seatType = SeatTypeEnum.LEVEL_3;
-                        price = carriage.getPrice() * (100 - 2 * carriage.getDiscount()) / 100;
-                    } else if (isSixBedsLevel2(i)) {
-                        seatType = SeatTypeEnum.LEVEL_2;
-                        price = carriage.getPrice() * (100 - carriage.getDiscount()) / 100;
-                    } else {
-                        seatType = SeatTypeEnum.LEVEL_1;
-                        price = carriage.getPrice();
-                    }
-                    break;
-                case fourBeds:
-                    if (isFourBedsLevel1(i)) {
-                        seatType = SeatTypeEnum.LEVEL_1;
-                        price = carriage.getPrice();
-                    } else {
-                        seatType = SeatTypeEnum.LEVEL_2;
-                        price = carriage.getPrice() * (100 - carriage.getDiscount()) / 100;
-                    }
-                    break;
-                case seat:
-                default:
-                    seatType = SeatTypeEnum.LEVEL_1; // Default for seat type
-                    price = carriage.getPrice();
-                    break;
-            }
-
-            seat.setSeatType(seatType);
-            seat.setPrice(price);
-            seats.add(seat);
-        }
-
-        // Save all seats
-        seatRepository.saveAll(seats);
-
         return savedCarriage;
     }
 
     // Helper methods for seat type assignment
-    private boolean isSixBedsLevel3(int seatNumber) {
-        // Seats 1, 2, 7, 8, 13, 14, ...
-        return (seatNumber % 6 == 1 || seatNumber % 6 == 2);
-    }
-
-    private boolean isSixBedsLevel2(int seatNumber) {
-        // Seats 3, 4, 9, 10, 15, 16, 21, 22, ...
-        return (seatNumber % 6 == 3 || seatNumber % 6 == 4);
-    }
-
-    private boolean isFourBedsLevel1(int seatNumber) {
-        // Seats 3, 4, 7, 8, 11, 12, ...
-        return (seatNumber % 4 == 3 || seatNumber % 4 == 0);
-    }
 
     public Carriage fetchCarriageById(long id) {
         Optional<Carriage> carriageOptional = this.carriageRepository.findById(id);

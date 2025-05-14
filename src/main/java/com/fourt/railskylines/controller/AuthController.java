@@ -215,37 +215,38 @@ public class AuthController {
 
         String hashPassword = this.passwordEncoder.encode(postManUser.getPassword());
         postManUser.setPassword(hashPassword);
-        User user = this.userService.handleCreateNewUser(postManUser);
+
+        User user = this.userService.handleRegisterNewUser(postManUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResCreateUserDTO(user));
     }
 
     @PostMapping("/auth/verify-email")
-    public ResponseEntity<String> verifyEmail(@Valid @RequestBody VerifyEmailDTO verifyEmailDTO) {
-        try {
-
-            userService.verifyEmail(verifyEmailDTO);
-            return ResponseEntity.ok("Mã xác minh đã được gửi đến email của bạn");
-        } catch (IdInvalidException e) {
-
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Không thể gửi mã xác minh");
-        }
+    public ResponseEntity<String> verifyEmail(@Valid @RequestBody VerifyEmailDTO verifyEmailDTO)
+            throws IdInvalidException {
+        this.userService.verifyEmail(verifyEmailDTO);
+        return ResponseEntity.ok("Verification code sent");
     }
 
     @PostMapping("/auth/verify-code")
-    public ResponseEntity<String> verifyCode(@Valid @RequestBody VerifyCodeDTO verifyCodeDTO) {
+    public ResponseEntity<RestResponse<Object>> verifyCode(@Valid @RequestBody VerifyCodeDTO verifyCodeDTO) {
+        RestResponse<Object> response = new RestResponse<>();
         try {
-
             userService.verifyCode(verifyCodeDTO);
-            return ResponseEntity.ok("Xác minh mã OTP thành công");
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("Verification successful");
+            return ResponseEntity.ok(response);
         } catch (IdInvalidException e) {
-
-            return ResponseEntity.badRequest().body(e.getMessage());
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setError("Invalid request");
+            response.setMessage(e.getMessage());
+            response.setData(null);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Không thể xác minh mã OTP");
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.setError("Server error");
+            response.setMessage("Verification failed");
+            response.setData(null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -278,4 +279,5 @@ public class AuthController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 }
