@@ -18,8 +18,8 @@ public class CorsConfig {
         configuration.setAllowedOrigins(
                 Arrays.asList(
                         "http://localhost:3000", // Next.js dev server
-                        "https://railskylines-fe-1.onrender.com" // Thay bằng domain production của bạn
-                ));
+                        "https://railskylines-fe-1.onrender.com", "https://railskylines-fe-4.onrender.com",
+                        "https://railskylines-fe-5.onrender.com", "https://railskylines-fe-6.onrender.com"));
 
         // Các phương thức HTTP được phép
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
