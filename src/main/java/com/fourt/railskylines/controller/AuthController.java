@@ -237,7 +237,6 @@ public class AuthController {
     @PostMapping("/auth/verify-code")
     public ResponseEntity<String> verifyCode(@Valid @RequestBody VerifyCodeDTO verifyCodeDTO) {
         try {
-
             userService.verifyCode(verifyCodeDTO);
             return ResponseEntity.ok("Xác minh mã OTP thành công");
         } catch (IdInvalidException e) {

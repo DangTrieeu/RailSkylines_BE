@@ -283,11 +283,6 @@ public class UserService {
             throw new IdInvalidException("Email chưa được đăng ký");
         }
 
-        if (!user.isStatus()) {
-
-            throw new IdInvalidException("Mã OTP chưa được xác minh. Vui lòng xác minh OTP trước khi đặt lại mật khẩu");
-        }
-
         if (user.getCode() == null || !user.getCode().equals(verificationCode)
                 || user.getCodeExpired().isBefore(Instant.now())) {
 
