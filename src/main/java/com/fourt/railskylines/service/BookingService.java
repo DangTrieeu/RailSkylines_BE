@@ -6,7 +6,9 @@ import com.fourt.railskylines.domain.request.TicketRequestDTO;
 import com.fourt.railskylines.domain.response.ResBookingHistoryDTO;
 import com.fourt.railskylines.domain.response.ResTicketHistoryDTO;
 import com.fourt.railskylines.domain.response.ResUserDTO;
+import com.fourt.railskylines.domain.response.ResUserDTO.RoleUser;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
+import com.fourt.railskylines.domain.response.ResBookingDTO.ListTickets;
 import com.fourt.railskylines.repository.*;
 import com.fourt.railskylines.util.SecurityUtil;
 import com.fourt.railskylines.util.constant.CustomerObjectEnum;
@@ -14,6 +16,7 @@ import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 import com.fourt.railskylines.util.constant.PromotionStatusEnum;
 import com.fourt.railskylines.util.constant.TicketStatusEnum;
 import com.fourt.railskylines.domain.response.PaymentDTO;
+import com.fourt.railskylines.domain.response.ResBookingDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -515,38 +518,57 @@ public class BookingService {
     /**
      * Retrieve all bookings from the repository.
      */
-    public List<Booking> getAllBookings() {
-        List<Booking> bookings = bookingRepository.findAll();
-        if (bookings.isEmpty()) {
-            logger.info("No bookings found in the repository");
-        } else {
-            logger.info("Retrieved {} bookings", bookings.size());
-        }
-        return bookings;
+
+    // Fetch all bookings with pagination and filtering
+    public ResultPaginationDTO getAllBookings(Specification<Booking> spec, Pageable pageable) {
+        Page<Booking> pageBookings = this.bookingRepository.findAll(spec, pageable);
+        ResultPaginationDTO res = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+
+        meta.setPages(pageBookings.getTotalPages());
+        meta.setTotal(pageBookings.getTotalElements());
+
+        res.setMeta(meta);
+
+        // remove sensitive data
+        List<ResBookingDTO> listBookings = pageBookings.getContent()
+                .stream()
+                .map(this::convertToResBookingDTO)
+                .collect(Collectors.toList());
+
+        res.setResult(listBookings);
+        return res;
     }
-    // Fetch all users
-    // public ResultPaginationDTO getAllBookings(Specification<User> spec, Pageable
-    // pageable) {
-    // Page<User> pageBookings = this.userRepository.findAll(spec, pageable);
-    // ResultPaginationDTO res = new ResultPaginationDTO();
-    // ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
 
-    // meta.setPage(pageable.getPageNumber() + 1);
-    // meta.setPageSize(pageable.getPageSize());
+    // Convert Booking to ResBookingDTO
+    public ResBookingDTO convertToResBookingDTO(Booking booking) {
+        ResBookingDTO res = new ResBookingDTO();
+        res.setBookingId(booking.getBookingId());
+        res.setBookingCode(booking.getBookingCode());
+        res.setDate(booking.getDate());
+        res.setPaymentStatus(booking.getPaymentStatus());
+        res.setTotalPrice(booking.getTotalPrice());
+        res.setPayAt(booking.getPayAt());
+        res.setTransactionId(booking.getTransactionId());
+        res.setVnpTxnRef(booking.getVnpTxnRef());
+        res.setPaymentType(booking.getPaymentType());
+        res.setContactEmail(booking.getContactEmail());
+        res.setContactPhone(booking.getContactPhone());
+        res.setPromotion(booking.getPromotion());
+        if (booking.getTickets() != null && !booking.getTickets().isEmpty()) {
+            List<ResBookingDTO.ListTickets> listTickets = booking.getTickets().stream()
+                    .map(ticket -> new ResBookingDTO.ListTickets(
+                            ticket.getTicketCode(),
+                            ticket.getCitizenId()))
+                    .collect(Collectors.toList());
+            res.setTickets(listTickets); // Lưu toàn bộ danh sách
+        }
+        return res;
+    }
 
-    // meta.setPages(pageBookings.getTotalPages());
-    // meta.setTotal(pageBookings.getTotalElements());
-
-    // res.setMeta(meta);
-
-    // // remove sensitive data
-    // List<ResUserDTO> listUser = pageBookings.getContent()
-    // .stream().map(item -> this.convertToResUserDTO(item))
-    // .collect(Collectors.toList());
-
-    // res.setResult(listUser);
-    // return res;
-    // }
     /**
      * Retrieve a booking by its ID.
      */

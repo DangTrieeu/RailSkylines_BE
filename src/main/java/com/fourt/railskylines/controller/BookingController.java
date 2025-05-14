@@ -1,15 +1,21 @@
 package com.fourt.railskylines.controller;
 
 import com.fourt.railskylines.domain.Booking;
+import com.fourt.railskylines.domain.User;
 import com.fourt.railskylines.domain.response.ResBookingHistoryDTO;
 import com.fourt.railskylines.domain.response.RestResponse;
+import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.service.BookingService;
 import com.fourt.railskylines.util.SecurityUtil;
+import com.turkraft.springfilter.boot.Filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -154,26 +160,10 @@ public class BookingController {
         }
     }
     @GetMapping("/bookings")
-    public ResponseEntity<RestResponse<List<Booking>>> getAllBookings() {
-        String email = SecurityUtil.getCurrentUserLogin()
-                .orElseThrow(() -> new RuntimeException("User not authenticated"));
-
-        try {
-            List<Booking> bookings = bookingService.getAllBookings();
-            RestResponse<List<Booking>> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("All bookings retrieved successfully");
-            response.setData(bookings);
-            response.setError(null);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            RestResponse<List<Booking>> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage(e.getMessage());
-            response.setData(null);
-            response.setError("Invalid request");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<ResultPaginationDTO> getAllBookings(@Filter Specification<Booking> spec,
+            Pageable pageable) {
+                return ResponseEntity.status(HttpStatus.OK).body(
+                this.bookingService.getAllBookings(spec, pageable));
     }
 
     @GetMapping("/bookings/{id}")
