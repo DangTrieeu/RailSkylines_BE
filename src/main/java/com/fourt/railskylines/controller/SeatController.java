@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin("https://railskylines-fe-1.onrender.com")
 public class SeatController {
 
     private final SeatService seatService;

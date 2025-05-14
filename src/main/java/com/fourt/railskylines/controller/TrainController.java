@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 // URL
 @RequestMapping("/api/v1")
+@CrossOrigin("https://railskylines-fe-1.onrender.com")
 public class TrainController {
     private final TrainService trainService;
 

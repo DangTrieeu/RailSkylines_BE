@@ -85,6 +85,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin("https://railskylines-fe-1.onrender.com")
 public class TrainTripController {
 
     private final TrainTripService trainTripService;

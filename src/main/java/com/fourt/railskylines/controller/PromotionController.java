@@ -18,6 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin("https://railskylines-fe-1.onrender.com")
 public class PromotionController {
     private final PromotionService promotionService;
 

@@ -14,6 +14,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +29,7 @@ import com.fourt.railskylines.util.error.StorageException;
 
 @RestController
 @RequestMapping("api/v1")
+@CrossOrigin("https://railskylines-fe-1.onrender.com")
 public class FileController {
     @Value("${railskylines.upload-file.base-uri}")
     private String baseURI;

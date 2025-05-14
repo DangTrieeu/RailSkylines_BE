@@ -5,6 +5,7 @@ import com.fourt.railskylines.domain.response.RestResponse;
 import com.fourt.railskylines.service.RevenueService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,6 +15,7 @@ import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin("https://railskylines-fe-1.onrender.com")
 public class RevenueController {
 
     private final RevenueService revenueService;
