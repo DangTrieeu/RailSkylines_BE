@@ -18,7 +18,9 @@ import com.fourt.railskylines.domain.response.ResCreateUserDTO;
 import com.fourt.railskylines.domain.response.ResUpdateUserDTO;
 import com.fourt.railskylines.domain.response.ResUserDTO;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
+import com.fourt.railskylines.repository.UserRepository;
 import com.fourt.railskylines.service.UserService;
+import com.fourt.railskylines.util.SecurityUtil;
 import com.fourt.railskylines.util.annotation.APIMessage;
 import com.fourt.railskylines.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
@@ -32,10 +34,13 @@ public class UserController {
     private final UserService userService;
 
     private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
-    public UserController(UserService userService, PasswordEncoder passwordEncoder) {
+    public UserController(UserService userService, PasswordEncoder passwordEncoder,
+            UserRepository userRepository) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.userRepository = userRepository;
     }
 
     // Create a new user
@@ -56,9 +61,9 @@ public class UserController {
     }
 
     // fetch user by id
-    @GetMapping("/users/{userId}")
+    @GetMapping("/users/{id}")
     @APIMessage("Fetch user by id")
-    public ResponseEntity<ResUserDTO> getUserById(@PathVariable("userId") long id) throws IdInvalidException {
+    public ResponseEntity<ResUserDTO> getUserById(@PathVariable("id") long id) throws IdInvalidException {
         User fetchUser = this.userService.handleFetchUserById(id);
         if (fetchUser == null) {
             throw new IdInvalidException("User with id = " + id + " does not exist");
@@ -96,6 +101,12 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable("id") long id)
             throws IdInvalidException {
         User currentUser = this.userService.handleFetchUserById(id);
+        if (currentUser != null && currentUser.getRole().getId() == 1) {
+            // Assuming role with id 1 is super admin
+            // You can replace this with the actual logic to check if the user is a super
+            // admin
+            throw new IdInvalidException("You cannot delete super admin");
+        }
         if (currentUser == null) {
             throw new IdInvalidException("User with id = " + id + " does not exist");
         }

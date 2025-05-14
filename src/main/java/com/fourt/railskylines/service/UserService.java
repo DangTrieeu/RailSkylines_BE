@@ -105,10 +105,7 @@ public class UserService {
     // Fetch user by id
     public User handleFetchUserById(long id) {
         Optional<User> userOptional = this.userRepository.findById(id);
-        if (userOptional.isPresent()) {
-            return userOptional.get();
-        }
-        return null;
+        return userOptional.get();
     }
 
     // Fetch all users
@@ -143,7 +140,8 @@ public class UserService {
             user.setPhoneNumber(updateUser.getPhoneNumber());
             user.setAvatar(updateUser.getAvatar());
             user.setCitizenId(updateUser.getCitizenId());
-            user.setPassword(updateUser.getPassword());
+            String hashPassword = this.passwordEncoder.encode(updateUser.getPassword());
+            user.setPassword(hashPassword);
             user = this.userRepository.save(user);
         }
         return user;
