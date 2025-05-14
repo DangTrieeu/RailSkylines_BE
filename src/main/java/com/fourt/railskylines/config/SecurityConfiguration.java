@@ -65,7 +65,7 @@ public class SecurityConfiguration {
                 "/api/v1/vn-pay",
                 "/api/v1/vn-pay/**",
                 "/api/v1/callback/**",
-                "/api/v1/seats/**"
+                "/api/v1/seats/**",
         };
 
         http

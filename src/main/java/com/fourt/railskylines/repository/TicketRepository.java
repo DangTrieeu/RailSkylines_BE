@@ -1,5 +1,6 @@
 package com.fourt.railskylines.repository;
 
+import com.fourt.railskylines.domain.Booking;
 import com.fourt.railskylines.domain.Seat;
 import com.fourt.railskylines.domain.Ticket;
 import com.fourt.railskylines.domain.User;
@@ -18,4 +19,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecif
     boolean existsBySeatInAndTicketStatusIn(List<Seat> seats, List<TicketStatusEnum> statuses);
 
     List<Ticket> findByOwner(User owner);
+
+    List<Ticket> findByBooking(Booking booking);
 }

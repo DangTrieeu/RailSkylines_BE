@@ -2,6 +2,7 @@ package com.fourt.railskylines.controller;
 
 import com.fourt.railskylines.domain.Booking;
 import com.fourt.railskylines.domain.User;
+import com.fourt.railskylines.domain.response.BookingResponseDTO;
 import com.fourt.railskylines.domain.response.ResBookingHistoryDTO;
 import com.fourt.railskylines.domain.response.RestResponse;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
@@ -67,7 +68,8 @@ public class BookingController {
             Object boardingStationIdObj = ticket.get("boardingStationId");
             Object alightingStationIdObj = ticket.get("alightingStationId");
             if (boardingStationIdObj == null || alightingStationIdObj == null) {
-                throw new IllegalArgumentException("boardingStationId and alightingStationId must be provided in tickets param");
+                throw new IllegalArgumentException(
+                        "boardingStationId and alightingStationId must be provided in tickets param");
             }
         }
 
@@ -86,7 +88,8 @@ public class BookingController {
         if (seatIds.size() != request.getTickets().size()) {
             RestResponse<String> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé (" + request.getTickets().size() + ")");
+            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé ("
+                    + request.getTickets().size() + ")");
             response.setData(null);
             response.setError("Invalid request");
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -159,25 +162,47 @@ public class BookingController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
     }
+
     @GetMapping("/bookings")
     public ResponseEntity<ResultPaginationDTO> getAllBookings(@Filter Specification<Booking> spec,
             Pageable pageable) {
-                return ResponseEntity.status(HttpStatus.OK).body(
+        return ResponseEntity.status(HttpStatus.OK).body(
                 this.bookingService.getAllBookings(spec, pageable));
     }
 
-    @GetMapping("/bookings/{id}")
-    public ResponseEntity<RestResponse<Booking>> getBookingById(@PathVariable("id") Long id) {
+    // @GetMapping("/bookings/{id}")
+    // public ResponseEntity<RestResponse<Booking>>
+    // getBookingById(@PathVariable("id") Long id) {
+    // try {
+    // Booking booking = bookingService.getBookingById(id);
+    // RestResponse<Booking> response = new RestResponse<>();
+    // response.setStatusCode(HttpStatus.OK.value());
+    // response.setMessage("Booking retrieved successfully");
+    // response.setData(booking);
+    // response.setError(null);
+    // return ResponseEntity.ok(response);
+    // } catch (Exception e) {
+    // RestResponse<Booking> response = new RestResponse<>();
+    // response.setStatusCode(HttpStatus.NOT_FOUND.value());
+    // response.setMessage(e.getMessage());
+    // response.setData(null);
+    // response.setError("Booking not found");
+    // return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    // }
+    // }
+    @GetMapping("/bookings/{bookingId}")
+    public ResponseEntity<RestResponse<BookingResponseDTO>> getBookingById(
+            @PathVariable("bookingId") String bookingId) {
         try {
-            Booking booking = bookingService.getBookingById(id);
-            RestResponse<Booking> response = new RestResponse<>();
+            BookingResponseDTO booking = bookingService.getBookingById(bookingId);
+            RestResponse<BookingResponseDTO> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.OK.value());
             response.setMessage("Booking retrieved successfully");
             response.setData(booking);
             response.setError(null);
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            RestResponse<Booking> response = new RestResponse<>();
+        } catch (RuntimeException e) {
+            RestResponse<BookingResponseDTO> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.NOT_FOUND.value());
             response.setMessage(e.getMessage());
             response.setData(null);
