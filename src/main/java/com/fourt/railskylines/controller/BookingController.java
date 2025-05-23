@@ -43,6 +43,85 @@ public class BookingController {
         this.objectMapper = objectMapper;
     }
 
+    // @PostMapping("/bookings")
+    // @Transactional
+    // public ResponseEntity<RestResponse<String>> createBooking(
+    // @RequestParam("tickets") String ticketsParam,
+    // @RequestParam(value = "trainTripId") Long trainTripId,
+    // @RequestBody @Valid BookingRequestDTO request,
+    // HttpServletRequest httpServletRequest) throws Exception {
+    // if (trainTripId == null) {
+    // RestResponse<String> response = new RestResponse<>();
+    // response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+    // response.setMessage("trainTripId is required in query parameter");
+    // response.setData(null);
+    // response.setError("Invalid request");
+    // return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    // }
+    // request.setTrainTripId(trainTripId);
+
+    // List<Map<String, Object>> tickets = objectMapper.readValue(ticketsParam,
+    // List.class);
+    // List<Long> seatIds = new ArrayList<>();
+    // for (Map<String, Object> ticket : tickets) {
+    // Long seatNumber = ((Number) ticket.get("seatNumber")).longValue();
+    // seatIds.add(seatNumber);
+    // Object boardingStationIdObj = ticket.get("boardingStationId");
+    // Object alightingStationIdObj = ticket.get("alightingStationId");
+    // if (boardingStationIdObj == null || alightingStationIdObj == null) {
+    // throw new IllegalArgumentException(
+    // "boardingStationId and alightingStationId must be provided in tickets
+    // param");
+    // }
+    // }
+
+    // if (seatIds == null || seatIds.isEmpty()) {
+    // RestResponse<String> response = new RestResponse<>();
+    // response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+    // response.setMessage("Seat IDs must not be empty");
+    // response.setData(null);
+    // response.setError("Invalid request");
+    // return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    // }
+
+    // request.setSeatIds(seatIds);
+    // request.setTicketsParam(ticketsParam);
+
+    // if (seatIds.size() != request.getTickets().size()) {
+    // RestResponse<String> response = new RestResponse<>();
+    // response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+    // response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số
+    // lượng vé ("
+    // + request.getTickets().size() + ")");
+    // response.setData(null);
+    // response.setError("Invalid request");
+    // return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    // }
+
+    // // Kiểm tra contactEmail cho người không đăng ký
+    // String email = SecurityUtil.getCurrentUserLogin().orElse(null);
+    // if (email == null && (request.getContactEmail() == null ||
+    // request.getContactEmail().isBlank())) {
+    // RestResponse<String> response = new RestResponse<>();
+    // response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+    // response.setMessage("Contact email is required for non-registered users");
+    // response.setData(null);
+    // response.setError("Invalid request");
+    // return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    // }
+
+    // Booking booking = bookingService.createBooking(request, httpServletRequest);
+    // String paymentUrl = bookingService.getPaymentUrl(booking,
+    // httpServletRequest);
+
+    // RestResponse<String> response = new RestResponse<>();
+    // response.setStatusCode(HttpStatus.OK.value());
+    // response.setMessage("Booking created successfully");
+    // response.setData(paymentUrl);
+    // response.setError(null);
+
+    // return ResponseEntity.ok(response);
+    // }
     @PostMapping("/bookings")
     @Transactional
     public ResponseEntity<RestResponse<String>> createBooking(
@@ -59,52 +138,19 @@ public class BookingController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
         request.setTrainTripId(trainTripId);
+        request.setTicketsParam(ticketsParam);
 
         List<Map<String, Object>> tickets = objectMapper.readValue(ticketsParam, List.class);
         List<Long> seatIds = new ArrayList<>();
         for (Map<String, Object> ticket : tickets) {
             Long seatNumber = ((Number) ticket.get("seatNumber")).longValue();
             seatIds.add(seatNumber);
-            Object boardingStationIdObj = ticket.get("boardingStationId");
-            Object alightingStationIdObj = ticket.get("alightingStationId");
-            if (boardingStationIdObj == null || alightingStationIdObj == null) {
+            if (ticket.get("boardingStationId") == null || ticket.get("alightingStationId") == null) {
                 throw new IllegalArgumentException(
                         "boardingStationId and alightingStationId must be provided in tickets param");
             }
         }
-
-        if (seatIds == null || seatIds.isEmpty()) {
-            RestResponse<String> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("Seat IDs must not be empty");
-            response.setData(null);
-            response.setError("Invalid request");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
-
         request.setSeatIds(seatIds);
-        request.setTicketsParam(ticketsParam);
-
-        if (seatIds.size() != request.getTickets().size()) {
-            RestResponse<String> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé ("
-                    + request.getTickets().size() + ")");
-            response.setData(null);
-            response.setError("Invalid request");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
-
-        // Kiểm tra contactEmail cho người không đăng ký
-        String email = SecurityUtil.getCurrentUserLogin().orElse(null);
-        if (email == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
-            RestResponse<String> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("Contact email is required for non-registered users");
-            response.setData(null);
-            response.setError("Invalid request");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
 
         Booking booking = bookingService.createBooking(request, httpServletRequest);
         String paymentUrl = bookingService.getPaymentUrl(booking, httpServletRequest);
@@ -114,7 +160,6 @@ public class BookingController {
         response.setMessage("Booking created successfully");
         response.setData(paymentUrl);
         response.setError(null);
-
         return ResponseEntity.ok(response);
     }
 
