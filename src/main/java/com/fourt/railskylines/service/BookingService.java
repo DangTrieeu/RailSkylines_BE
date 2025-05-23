@@ -1,25 +1,16 @@
 package com.fourt.railskylines.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fourt.railskylines.decorator.PriceCalculator;
+import com.fourt.railskylines.decorator.BasePriceCalculator;
+import com.fourt.railskylines.decorator.FixedDiscountDecorator;
 import com.fourt.railskylines.domain.*;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.domain.request.TicketRequestDTO;
-import com.fourt.railskylines.domain.response.ResBookingHistoryDTO;
-import com.fourt.railskylines.domain.response.ResTicketHistoryDTO;
-import com.fourt.railskylines.domain.response.ResUserDTO;
-import com.fourt.railskylines.domain.response.ResUserDTO.RoleUser;
-import com.fourt.railskylines.domain.response.ResultPaginationDTO;
-import com.fourt.railskylines.domain.response.TicketResponseDTO;
-import com.fourt.railskylines.domain.response.ResBookingDTO.ListTickets;
+import com.fourt.railskylines.domain.response.*;
 import com.fourt.railskylines.repository.*;
 import com.fourt.railskylines.util.SecurityUtil;
-import com.fourt.railskylines.util.constant.CustomerObjectEnum;
-import com.fourt.railskylines.util.constant.PaymentStatusEnum;
-import com.fourt.railskylines.util.constant.PromotionStatusEnum;
-import com.fourt.railskylines.util.constant.TicketStatusEnum;
-import com.fourt.railskylines.domain.response.BookingResponseDTO;
-import com.fourt.railskylines.domain.response.PaymentDTO;
-import com.fourt.railskylines.domain.response.ResBookingDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fourt.railskylines.util.constant.*;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -90,21 +81,15 @@ public class BookingService {
         }
     }
 
-    @Transactional
+        @Transactional
     public Booking createBooking(BookingRequestDTO request, HttpServletRequest httpServletRequest) {
         User user = null;
         String email = SecurityUtil.getCurrentUserLogin().orElse(null);
 
-        // Kiểm tra nếu có email từ SecurityUtil (người dùng đã đăng nhập)
         if (email != null) {
             user = userRepository.findByEmail(email);
-            // Không ném ngoại lệ nếu user không tìm thấy, vì có thể người dùng đã đăng nhập
-            // nhưng tài khoản bị xóa
-            // hoặc hệ thống sử dụng email khác để xác thực
         }
 
-        // Nếu không có user (người không đăng ký hoặc user không tìm thấy), yêu cầu
-        // contactEmail
         if (user == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
             throw new RuntimeException("Contact email is required for non-registered users");
         }
@@ -146,7 +131,6 @@ public class BookingService {
             }
         }
 
-        // Tạo danh sách đầy đủ các ga: originStation + journey
         List<Station> allStations = new ArrayList<>();
         allStations.add(route.getOriginStation());
         allStations.addAll(route.getJourney());
@@ -185,24 +169,19 @@ public class BookingService {
                 }
             }
 
-            // Kiểm tra xem boardingStation và alightingStation có trong danh sách các ga
-            // hay không
             if (!allStations.contains(boardingStation) || !allStations.contains(alightingStation)) {
                 throw new RuntimeException("Ga lên hoặc xuống không thuộc lộ trình của chuyến tàu");
             }
 
-            // Kiểm tra thứ tự ga: boardingStation phải trước alightingStation
             int boardingIndex = allStations.indexOf(boardingStation);
             int alightingIndex = allStations.indexOf(alightingStation);
             if (boardingIndex >= alightingIndex) {
                 throw new RuntimeException("Ga lên tàu phải trước ga xuống tàu");
             }
 
-            // Gán boardingOrder và alightingOrder dựa trên index trong allStations
             int boardingOrder = boardingIndex;
             int alightingOrder = alightingIndex;
 
-            // Kiểm tra ghế khả dụng cho đoạn đường
             logger.info("Checking seat {} for trainTripId {}, boardingOrder {}, alightingOrder {}",
                     seat.getSeatId(), trainTripId, boardingOrder, alightingOrder);
             List<Seat> availableSeats = seatRepository.findAvailableSeatsForSegment(
@@ -239,13 +218,12 @@ public class BookingService {
 
         Booking booking = new Booking();
         booking.setPaymentStatus(PaymentStatusEnum.pending);
-        booking.setContactEmail(user != null ? user.getEmail() : request.getContactEmail()); // Sử dụng email của user
-                                                                                             // nếu có
+        booking.setContactEmail(user != null ? user.getEmail() : request.getContactEmail());
         booking.setContactPhone(request.getContactPhone());
         booking.setDate(Instant.now());
         booking.setPaymentType(request.getPaymentType());
         booking.setVnpTxnRef(booking.getBookingCode());
-        booking.setUser(user); // user có thể là null cho người không đăng ký
+        booking.setUser(user);
 
         booking = bookingRepository.save(booking);
 
@@ -275,28 +253,21 @@ public class BookingService {
             tickets.add(ticket);
         }
         ticketRepository.saveAll(tickets);
+        booking.setTickets(tickets); // Attach tickets to booking
+        bookingRepository.save(booking); // Persist the updated relationship
 
-        double totalPrice = tickets.stream().mapToDouble(Ticket::getPrice).sum();
-        logger.info("Total price before promotion: {}", totalPrice);
+        // Sử dụng Decorator Pattern để tính totalPrice
+        PriceCalculator calculator = new BasePriceCalculator();
         if (request.getPromotionId() != null) {
             Promotion promotion = promotionRepository.findById(request.getPromotionId())
                     .orElseThrow(() -> new RuntimeException("Promotion not found: " + request.getPromotionId()));
-            if (promotion.getValidity().isBefore(Instant.now())) {
-                throw new RuntimeException("Promotion " + promotion.getPromotionCode() + " has expired");
-            }
-            if (promotion.getStatus() != PromotionStatusEnum.active) {
-                throw new RuntimeException("Promotion " + promotion.getPromotionCode() + " is not active");
-            }
-            double discount = promotion.getDiscount();
-            logger.info("Applied promotion discount: {}", discount);
-            totalPrice -= discount;
+            calculator = new FixedDiscountDecorator(calculator, promotion);
             booking.setPromotion(promotion);
         }
-        if (totalPrice < 0) {
-            totalPrice = 0;
-        }
+        logger.info("Tickets for booking {}: {}", booking.getBookingCode(), booking.getTickets());
+        double totalPrice = calculator.calculatePrice(booking);
         booking.setTotalPrice(totalPrice);
-        logger.info("Total price after promotion: {}", totalPrice);
+        logger.info("Total price after promotion for booking {}: {}", booking.getBookingCode(), totalPrice);
 
         bookingRepository.save(booking);
 
@@ -435,7 +406,7 @@ public class BookingService {
             List<Ticket> tickets = booking.getTickets();
             if (tickets.isEmpty()) {
                 logger.warn("Không tìm thấy vé cho booking: {}", booking.getBookingCode());
-                return dto; // Trả về DTO với dữ liệu booking nhưng không có vé
+                return dto;
             }
 
             Ticket firstTicket = tickets.get(0);
@@ -444,14 +415,11 @@ public class BookingService {
             Train train = carriage.getTrain();
             List<TrainTrip> trainTrips = train.getTrip();
 
-            // Tìm TrainTrip phù hợp
             TrainTrip trainTrip = trainTrips.stream()
                     .filter(trip -> {
-                        // Tạo danh sách ga đầy đủ: originStation + journey
                         List<Station> allStations = new ArrayList<>();
                         allStations.add(trip.getRoute().getOriginStation());
                         allStations.addAll(trip.getRoute().getJourney());
-                        // Kiểm tra xem boardingOrder và alightingOrder có hợp lệ
                         return firstTicket.getBoardingOrder() >= 0 &&
                                 firstTicket.getBoardingOrder() < allStations.size() &&
                                 firstTicket.getAlightingOrder() > firstTicket.getBoardingOrder() &&
@@ -462,11 +430,10 @@ public class BookingService {
 
             if (trainTrip == null) {
                 logger.warn("Không tìm thấy TrainTrip cho vé: {}", firstTicket.getTicketCode());
-                return dto; // Trả về DTO với dữ liệu booking nhưng không có thông tin TrainTrip
+                return dto;
             }
 
             Route route = trainTrip.getRoute();
-            // Tạo danh sách ga đầy đủ
             List<Station> allStations = new ArrayList<>();
             allStations.add(route.getOriginStation());
             allStations.addAll(route.getJourney());
@@ -479,7 +446,6 @@ public class BookingService {
                 ticketDto.setName(ticket.getName());
                 ticketDto.setCitizenId(ticket.getCitizenId());
 
-                // Lấy ga lên và ga xuống dựa trên boardingOrder và alightingOrder
                 if (ticket.getBoardingOrder() >= 0 && ticket.getBoardingOrder() < allStations.size() &&
                         ticket.getAlightingOrder() >= 0 && ticket.getAlightingOrder() < allStations.size()) {
                     Station boardingStation = allStations.get(ticket.getBoardingOrder());
@@ -506,10 +472,6 @@ public class BookingService {
         }).collect(Collectors.toList());
     }
 
-    /**
-     * Find a booking by booking code and VNP transaction reference, no user
-     * authentication required.
-     */
     public Booking findBookingByCodeAndVnpTxnRef(String bookingCode, String vnpTxnRef) {
         Booking booking = bookingRepository.findByBookingCodeAndVnpTxnRef(bookingCode, vnpTxnRef)
                 .orElseThrow(
@@ -517,11 +479,6 @@ public class BookingService {
         return booking;
     }
 
-    /**
-     * Retrieve all bookings from the repository.
-     */
-
-    // Fetch all bookings with pagination and filtering
     public ResultPaginationDTO getAllBookings(Specification<Booking> spec, Pageable pageable) {
         Page<Booking> pageBookings = this.bookingRepository.findAll(spec, pageable);
         ResultPaginationDTO res = new ResultPaginationDTO();
@@ -529,13 +486,11 @@ public class BookingService {
 
         meta.setPage(pageable.getPageNumber() + 1);
         meta.setPageSize(pageable.getPageSize());
-
         meta.setPages(pageBookings.getTotalPages());
         meta.setTotal(pageBookings.getTotalElements());
 
         res.setMeta(meta);
 
-        // remove sensitive data
         List<ResBookingDTO> listBookings = pageBookings.getContent()
                 .stream()
                 .map(this::convertToResBookingDTO)
@@ -545,7 +500,6 @@ public class BookingService {
         return res;
     }
 
-    // Convert Booking to ResBookingDTO
     public ResBookingDTO convertToResBookingDTO(Booking booking) {
         ResBookingDTO res = new ResBookingDTO();
         res.setBookingId(booking.getBookingId());
@@ -566,14 +520,11 @@ public class BookingService {
                             ticket.getTicketCode(),
                             ticket.getCitizenId()))
                     .collect(Collectors.toList());
-            res.setTickets(listTickets); // Lưu toàn bộ danh sách
+            res.setTickets(listTickets);
         }
         return res;
     }
 
-    /**
-     * Retrieve a booking by its ID.
-     */
     public Booking getBookingById(Long id) {
         return bookingRepository.findByBookingId(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + id));
@@ -587,12 +538,10 @@ public class BookingService {
         }
         Booking booking = bookingOpt.get();
 
-        // Fetch tickets directly from repository
         List<Ticket> tickets = this.ticketRepository.findByBooking(booking);
         logger.info("Fetched booking ID: {}, bookingCode: {}, ticket count: {}",
                 bookingId, booking.getBookingCode(), tickets.size());
 
-        // Map to BookingResponseDTO
         BookingResponseDTO responseDTO = new BookingResponseDTO();
         responseDTO.setBookingId(booking.getBookingId());
         responseDTO.setBookingCode(booking.getBookingCode());
@@ -606,7 +555,6 @@ public class BookingService {
         responseDTO.setContactEmail(booking.getContactEmail());
         responseDTO.setContactPhone(booking.getContactPhone());
 
-        // Map tickets to TicketResponseDTO
         List<TicketResponseDTO> ticketDTOs = tickets.stream().map(ticket -> {
             TicketResponseDTO ticketDTO = new TicketResponseDTO();
             ticketDTO.setTicketId(ticket.getTicketId());
@@ -618,26 +566,19 @@ public class BookingService {
             ticketDTO.setStartDay(ticket.getStartDay());
             ticketDTO.setTicketStatus(ticket.getTicketStatus());
 
-            // Map Seat
             TicketResponseDTO.SeatDTO seatDTO = new TicketResponseDTO.SeatDTO();
             seatDTO.setSeatId(ticket.getSeat().getSeatId());
             seatDTO.setPrice(ticket.getSeat().getPrice());
             seatDTO.setSeatStatus(ticket.getSeat().getSeatStatus().name());
             ticketDTO.setSeat(seatDTO);
 
-            // Map TrainTrip
             TicketResponseDTO.TrainTripDTO trainTripDTO = new TicketResponseDTO.TrainTripDTO();
-
-            // Map Train
             TicketResponseDTO.TrainTripDTO.TrainDTO trainDTO = new TicketResponseDTO.TrainTripDTO.TrainDTO();
             trainTripDTO.setTrain(trainDTO);
-
             ticketDTO.setTrainTrip(trainTripDTO);
             return ticketDTO;
         }).collect(Collectors.toList());
         responseDTO.setTickets(ticketDTOs);
-
-        // Map Promotions
 
         return responseDTO;
     }
