@@ -1,21 +1,18 @@
 package com.fourt.railskylines.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fourt.railskylines.decorator.PriceCalculator;
-import com.fourt.railskylines.decorator.BasePriceCalculator;
-import com.fourt.railskylines.decorator.FixedDiscountDecorator;
 import com.fourt.railskylines.domain.*;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
-import com.fourt.railskylines.domain.request.TicketRequestDTO;
 import com.fourt.railskylines.domain.response.*;
 import com.fourt.railskylines.repository.*;
-import com.fourt.railskylines.util.SecurityUtil;
-import com.fourt.railskylines.util.constant.*;
+import com.fourt.railskylines.template.BookingCreator;
+import com.fourt.railskylines.util.constant.PaymentStatusEnum;
+import com.fourt.railskylines.util.constant.TicketStatusEnum;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,254 +22,38 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
     private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
-    private final SeatRepository seatRepository;
+    private final BookingCreator bookingCreator;
     private final BookingRepository bookingRepository;
     private final TicketRepository ticketRepository;
-    private final PromotionRepository promotionRepository;
-    private final UserRepository userRepository;
-    private final NotificationService notificationService;
     private final PaymentService paymentService;
-    private final ObjectMapper objectMapper;
-    private final StationRepository stationRepository;
-    private final TrainTripRepository trainTripRepository;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
-    public BookingService(SeatRepository seatRepository, BookingRepository bookingRepository,
-            TicketRepository ticketRepository, PromotionRepository promotionRepository,
-            UserRepository userRepository, NotificationService notificationService,
-            PaymentService paymentService, ObjectMapper objectMapper,
-            StationRepository stationRepository, TrainTripRepository trainTripRepository) {
-        this.seatRepository = seatRepository;
+    public BookingService(
+            @Qualifier("standardBookingCreator") BookingCreator bookingCreator, // Specify the bean
+            BookingRepository bookingRepository,
+            TicketRepository ticketRepository,
+            PaymentService paymentService,
+            NotificationService notificationService,
+            UserRepository userRepository) {
+        this.bookingCreator = bookingCreator;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
-        this.promotionRepository = promotionRepository;
-        this.userRepository = userRepository;
-        this.notificationService = notificationService;
         this.paymentService = paymentService;
-        this.objectMapper = objectMapper;
-        this.stationRepository = stationRepository;
-        this.trainTripRepository = trainTripRepository;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
-    private double getCustomerDiscountMultiplier(CustomerObjectEnum customerObject) {
-        if (customerObject == null) {
-            return 1.0;
-        }
-        switch (customerObject) {
-            case children:
-                return 0.5;
-            case student:
-                return 0.85;
-            case elderly:
-                return 0.5;
-            case veteran:
-                return 0.0;
-            case disabled:
-                return 0.2;
-            case adult:
-            default:
-                return 1.0;
-        }
-    }
-
-        @Transactional
+    @Transactional
     public Booking createBooking(BookingRequestDTO request, HttpServletRequest httpServletRequest) {
-        User user = null;
-        String email = SecurityUtil.getCurrentUserLogin().orElse(null);
-
-        if (email != null) {
-            user = userRepository.findByEmail(email);
-        }
-
-        if (user == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
-            throw new RuntimeException("Contact email is required for non-registered users");
-        }
-
-        Long trainTripId = request.getTrainTripId();
-        logger.info("Processing booking for trainTripId: {}", trainTripId);
-        if (trainTripId == null) {
-            throw new RuntimeException("trainTripId is required");
-        }
-        TrainTrip trainTrip = trainTripRepository.findById(trainTripId)
-                .orElseThrow(() -> new RuntimeException("TrainTrip not found: " + trainTripId));
-        Route route = trainTrip.getRoute();
-        Train train = trainTrip.getTrain();
-
-        List<Seat> seats = seatRepository.findBySeatIdIn(request.getSeatIds());
-        if (seats.size() != request.getSeatIds().size()) {
-            logger.error("Requested seats: {}, Found seats: {}", request.getSeatIds().size(), seats.size());
-            throw new RuntimeException("Một số ghế không tồn tại");
-        }
-
-        for (Seat seat : seats) {
-            if (!seat.getCarriage().getTrain().equals(train)) {
-                throw new RuntimeException(
-                        "Ghế " + seat.getSeatId() + " không thuộc chuyến tàu của TrainTrip " + trainTripId);
-            }
-        }
-
-        List<Map<String, Object>> ticketParams = null;
-        if (request.getTicketsParam() != null && !request.getTicketsParam().isEmpty()) {
-            try {
-                logger.info("Parsing ticketsParam: {}", request.getTicketsParam());
-                ticketParams = objectMapper.readValue(request.getTicketsParam(), List.class);
-                if (ticketParams.size() != request.getTickets().size()) {
-                    throw new RuntimeException("Số lượng vé trong ticketsParam không khớp với số lượng vé trong body");
-                }
-            } catch (Exception e) {
-                logger.error("Error parsing ticket params: {}", e.getMessage(), e);
-                throw new RuntimeException("Invalid ticket parameters: " + e.getMessage());
-            }
-        }
-
-        List<Station> allStations = new ArrayList<>();
-        allStations.add(route.getOriginStation());
-        allStations.addAll(route.getJourney());
-
-        for (int i = 0; i < request.getTickets().size(); i++) {
-            TicketRequestDTO ticketDTO = request.getTickets().get(i);
-            Seat seat = seats.get(i);
-
-            Optional<Station> boardingStationOpt = stationRepository.findById(ticketDTO.getBoardingStationId());
-            Optional<Station> alightingStationOpt = stationRepository.findById(ticketDTO.getAlightingStationId());
-            if (boardingStationOpt.isEmpty()) {
-                throw new RuntimeException("Ga lên tàu không tồn tại");
-            }
-            if (alightingStationOpt.isEmpty()) {
-                throw new RuntimeException("Ga xuống tàu không tồn tại");
-            }
-            Station boardingStation = boardingStationOpt.get();
-            Station alightingStation = alightingStationOpt.get();
-
-            if (ticketParams != null) {
-                Map<String, Object> ticketParam = ticketParams.get(i);
-                Object boardingStationIdObj = ticketParam.get("boardingStationId");
-                Object alightingStationIdObj = ticketParam.get("alightingStationId");
-
-                if (!(boardingStationIdObj instanceof Number) || !(alightingStationIdObj instanceof Number)) {
-                    throw new RuntimeException(
-                            "Invalid boardingStationId or alightingStationId in ticketsParam at index " + i);
-                }
-
-                Long boardingStationIdFromParam = ((Number) boardingStationIdObj).longValue();
-                Long alightingStationIdFromParam = ((Number) alightingStationIdObj).longValue();
-
-                if (!boardingStationIdFromParam.equals(ticketDTO.getBoardingStationId()) ||
-                        !alightingStationIdFromParam.equals(ticketDTO.getAlightingStationId())) {
-                    throw new RuntimeException("boardingStationId or alightingStationId mismatch at index " + i);
-                }
-            }
-
-            if (!allStations.contains(boardingStation) || !allStations.contains(alightingStation)) {
-                throw new RuntimeException("Ga lên hoặc xuống không thuộc lộ trình của chuyến tàu");
-            }
-
-            int boardingIndex = allStations.indexOf(boardingStation);
-            int alightingIndex = allStations.indexOf(alightingStation);
-            if (boardingIndex >= alightingIndex) {
-                throw new RuntimeException("Ga lên tàu phải trước ga xuống tàu");
-            }
-
-            int boardingOrder = boardingIndex;
-            int alightingOrder = alightingIndex;
-
-            logger.info("Checking seat {} for trainTripId {}, boardingOrder {}, alightingOrder {}",
-                    seat.getSeatId(), trainTripId, boardingOrder, alightingOrder);
-            List<Seat> availableSeats = seatRepository.findAvailableSeatsForSegment(
-                    trainTripId, boardingOrder, alightingOrder);
-            if (!availableSeats.contains(seat)) {
-                throw new RuntimeException("Ghế " + seat.getSeatId() + " không khả dụng cho đoạn đường này");
-            }
-        }
-
-        if (ticketParams != null) {
-            for (int i = 0; i < seats.size(); i++) {
-                Map<String, Object> ticketParam = ticketParams.get(i);
-                Object seatNumberObj = ticketParam.get("seatNumber");
-                Object priceObj = ticketParam.get("price");
-
-                if (!(seatNumberObj instanceof Number)) {
-                    throw new RuntimeException("Invalid seatNumber for ticket at index " + i + ": " + seatNumberObj);
-                }
-                if (!(priceObj instanceof Number)) {
-                    throw new RuntimeException("Invalid price for ticket at index " + i + ": " + priceObj);
-                }
-
-                Long seatNumber = ((Number) seatNumberObj).longValue();
-                Double priceFromParam = ((Number) priceObj).doubleValue();
-
-                logger.info("Checking seat: dbSeatId={}, dbPrice={}, paramSeatNumber={}, paramPrice={}",
-                        seats.get(i).getSeatId(), seats.get(i).getPrice(), seatNumber, priceFromParam);
-
-                if (seats.get(i).getSeatId() != seatNumber || seats.get(i).getPrice() != priceFromParam) {
-                    throw new RuntimeException("Price or seat mismatch for seat " + seatNumber);
-                }
-            }
-        }
-
-        Booking booking = new Booking();
-        booking.setPaymentStatus(PaymentStatusEnum.pending);
-        booking.setContactEmail(user != null ? user.getEmail() : request.getContactEmail());
-        booking.setContactPhone(request.getContactPhone());
-        booking.setDate(Instant.now());
-        booking.setPaymentType(request.getPaymentType());
-        booking.setVnpTxnRef(booking.getBookingCode());
-        booking.setUser(user);
-
-        booking = bookingRepository.save(booking);
-
-        List<Ticket> tickets = new ArrayList<>();
-        for (int i = 0; i < request.getTickets().size(); i++) {
-            TicketRequestDTO ticketDTO = request.getTickets().get(i);
-            Ticket ticket = new Ticket();
-            ticket.setBooking(booking);
-            ticket.setSeat(seats.get(i));
-            ticket.setCustomerObject(ticketDTO.getCustomerObject());
-            ticket.setName(ticketDTO.getName());
-            ticket.setCitizenId(ticketDTO.getCitizenId());
-            double basePrice = seats.get(i).getPrice();
-            double discountMultiplier = getCustomerDiscountMultiplier(ticketDTO.getCustomerObject());
-            double discountedPrice = basePrice * discountMultiplier;
-            ticket.setPrice(discountedPrice);
-            logger.info("Ticket for {}: basePrice={}, discountMultiplier={}, discountedPrice={}",
-                    ticketDTO.getName(), basePrice, discountMultiplier, discountedPrice);
-            ticket.setOwner(user);
-            ticket.setTicketStatus(TicketStatusEnum.issued);
-
-            Station boardingStation = stationRepository.findById(ticketDTO.getBoardingStationId()).orElseThrow();
-            Station alightingStation = stationRepository.findById(ticketDTO.getAlightingStationId()).orElseThrow();
-            ticket.setBoardingOrder(allStations.indexOf(boardingStation));
-            ticket.setAlightingOrder(allStations.indexOf(alightingStation));
-
-            tickets.add(ticket);
-        }
-        ticketRepository.saveAll(tickets);
-        booking.setTickets(tickets); // Attach tickets to booking
-        bookingRepository.save(booking); // Persist the updated relationship
-
-        // Sử dụng Decorator Pattern để tính totalPrice
-        PriceCalculator calculator = new BasePriceCalculator();
-        if (request.getPromotionId() != null) {
-            Promotion promotion = promotionRepository.findById(request.getPromotionId())
-                    .orElseThrow(() -> new RuntimeException("Promotion not found: " + request.getPromotionId()));
-            calculator = new FixedDiscountDecorator(calculator, promotion);
-            booking.setPromotion(promotion);
-        }
-        logger.info("Tickets for booking {}: {}", booking.getBookingCode(), booking.getTickets());
-        double totalPrice = calculator.calculatePrice(booking);
-        booking.setTotalPrice(totalPrice);
-        logger.info("Total price after promotion for booking {}: {}", booking.getBookingCode(), totalPrice);
-
-        bookingRepository.save(booking);
-
-        logger.info("Booking created successfully with code: {}", booking.getBookingCode());
-        return booking;
+        logger.info("Delegating booking creation to BookingCreator for trainTripId: {}", request.getTrainTripId());
+        return bookingCreator.createBooking(request, httpServletRequest);
     }
 
     public String getPaymentUrl(Booking booking, HttpServletRequest httpServletRequest) {

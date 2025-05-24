@@ -48,12 +48,15 @@ public class PromotionService {
         if (promotionDTO.getStartDate() != null && promotionDTO.getStartDate().isAfter(promotionDTO.getValidity())) {
             throw new IllegalArgumentException("Start date cannot be after validity date");
         }
+        if (promotionDTO.getDiscount() <= 0 || promotionDTO.getDiscount() > 100) {
+            throw new IllegalArgumentException("Discount percentage must be between 0 and 100");
+        }
 
         Promotion promotion = new Promotion();
         promotion.setPromotionCode(promotionDTO.getPromotionCode());
         promotion.setPromotionDescription(promotionDTO.getPromotionDescription());
         promotion.setPromotionName(promotionDTO.getPromotionName());
-        promotion.setDiscount(promotionDTO.getDiscount());
+        promotion.setDiscount(Math.round(promotionDTO.getDiscount() * 100.0) / 100.0); // Round to 2 decimals
         promotion.setStartDate(promotionDTO.getStartDate() != null ? promotionDTO.getStartDate() : Instant.now());
         promotion.setValidity(promotionDTO.getValidity());
         Instant now = Instant.now();
@@ -81,13 +84,16 @@ public class PromotionService {
         if (promotionDTO.getStartDate() != null && promotionDTO.getStartDate().isAfter(promotionDTO.getValidity())) {
             throw new IllegalArgumentException("Start date cannot be after validity date");
         }
+        if (promotionDTO.getDiscount() <= 0 || promotionDTO.getDiscount() > 100) {
+            throw new IllegalArgumentException("Discount percentage must be between 0 and 100");
+        }
 
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Promotion not found"));
         promotion.setPromotionCode(promotionDTO.getPromotionCode());
         promotion.setPromotionDescription(promotionDTO.getPromotionDescription());
         promotion.setPromotionName(promotionDTO.getPromotionName());
-        promotion.setDiscount(promotionDTO.getDiscount());
+        promotion.setDiscount(Math.round(promotionDTO.getDiscount() * 100.0) / 100.0); // Round to 2 decimals
         promotion.setStartDate(
                 promotionDTO.getStartDate() != null ? promotionDTO.getStartDate() : promotion.getStartDate());
         promotion.setValidity(promotionDTO.getValidity());
@@ -95,9 +101,9 @@ public class PromotionService {
             promotion.setStatus(promotionDTO.getStatus());
         } else {
             Instant now = Instant.now();
-            promotion.setStatus(now.isAfter(promotion.getStartDate()) && now.isBefore(promotion.getValidity())
-                    ? PromotionStatusEnum.active
-                    : now.isAfter(promotion.getValidity()) ? PromotionStatusEnum.expired
+            promotion.setStatus(now.isAfter(promotion.getValidity()) ? PromotionStatusEnum.expired
+                    : now.isAfter(promotion.getStartDate()) && now.isBefore(promotion.getValidity())
+                            ? PromotionStatusEnum.active
                             : PromotionStatusEnum.inactive);
         }
         promotion = promotionRepository.save(promotion);
