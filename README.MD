@@ -37,8 +37,10 @@ RailSkylines/
 │   │   │   ├── domain/          # JPA entities
 │   │   │   │   ├──request/      # Request Data Transfer Object
 |   |   |   |   └──response/     # Response Data Transfer Object
+│   │   │   ├── integration/     # Payment Gateway
 │   │   │   ├── repository/      # Spring Data repositories
 │   │   │   ├── service/         # Business logic services
+│   │   │   ├── util/            # helper
 │   │   │   └── RailSkylinesApplication.java  # Main application class
 │   │   └── resources/
 │   │       └── application.properties  # Configuration file
