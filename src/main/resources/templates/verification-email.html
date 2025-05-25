@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify Your Email - RailSkyLines</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', 'Helvetica', sans-serif;
+      background-color: #f4f4f4;
+      color: #333333;
+    "
+  >
+    <table
+      role="presentation"
+      style="
+        width: 100%;
+        max-width: 600px;
+        margin: 20px auto;
+        border-collapse: collapse;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 2px solid #1e90ff;
+      "
+    >
+      <!-- Decorative Border Wrapper -->
+      <tr>
+        <td
+          style="
+            background: linear-gradient(45deg, #1e90ff, #004aad);
+            padding: 4px;
+            border-radius: 12px;
+          "
+        >
+          <table
+            role="presentation"
+            style="
+              width: 100%;
+              border-collapse: collapse;
+              background-color: #ffffff;
+              border-radius: 8px;
+            "
+          >
+            <!-- Header with Logo -->
+            <tr>
+              <td
+                style="
+                  padding: 20px;
+                  text-align: center;
+                  background: linear-gradient(135deg, #1e90ff, #004aad);
+                  border-radius: 8px 8px 0 0;
+                "
+              >
+                <img
+                  src="https://i.imgur.com/emm3S4L.png"
+                  alt="RailSkyLines Logo"
+                  style="max-width: 100px; height: auto; margin-bottom: 10px"
+                />
+                <h1
+                  style="
+                    margin: 0;
+                    font-size: 28px;
+                    color: #ffffff;
+                    font-weight: 700;
+                  "
+                >
+                  Welcome to RailSkyLines!
+                </h1>
+              </td>
+            </tr>
+            <!-- Content -->
+            <tr>
+              <td style="padding: 30px">
+                <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5">
+                  Dear <span th:text="${name}">User</span>,
+                </p>
+                <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.5">
+                  Thank you for choosing RailSkyLines for your train ticket
+                  booking needs! To verify your email address, please use the
+                  code below. This code will expire in 5 minutes.
+                </p>
+                <div style="text-align: center; margin: 30px 0">
+                  <span
+                    style="
+                      display: inline-block;
+                      padding: 12px 24px;
+                      font-size: 24px;
+                      font-weight: bold;
+                      color: #ffffff;
+                      background-color: #1e90ff;
+                      border-radius: 6px;
+                      letter-spacing: 2px;
+                    "
+                    th:text="${code}"
+                    >CODE</span
+                  >
+                </div>
+                <p
+                  style="
+                    margin: 0 0 16px;
+                    font-size: 14px;
+                    line-height: 1.5;
+                    color: #666666;
+                  "
+                >
+                  If you didn’t request this, please ignore this email or
+                  contact our support team at
+                  <a
+                    href="mailto:support@railskylines.com"
+                    style="color: #1e90ff; text-decoration: none"
+                    >support@railskylines.com</a
+                  >.
+                </p>
+                <p
+                  style="
+                    margin: 24px 0 0;
+                    font-size: 14px;
+                    line-height: 1.5;
+                    color: #333333;
+                  "
+                >
+                  Best regards,<br />
+                  <strong>The RailSkyLines Team</strong><br />
+                  01 D. Vo Van Ngan, Linh Chieu, Thu Duc, Ho Chi Minh
+                </p>
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td
+                style="
+                  padding: 20px;
+                  text-align: center;
+                  background-color: #f8f9fa;
+                  border-radius: 0 0 8px 8px;
+                "
+              >
+                <p style="margin: 0; font-size: 12px; color: #777777">
+                  © 2025 RailSkyLines. All rights reserved.<br />
+                  <a
+                    href="https://railskylines.com/privacy"
+                    style="color: #1e90ff; text-decoration: none"
+                    >Privacy Policy</a
+                  >
+                  |
+                  <a
+                    href="https://railskylines.com/contact"
+                    style="color: #1e90ff; text-decoration: none"
+                    >Contact Us</a
+                  >
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
