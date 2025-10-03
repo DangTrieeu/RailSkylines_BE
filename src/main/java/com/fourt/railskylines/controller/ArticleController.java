@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fourt.railskylines.domain.Article;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.service.ArticleService;
+import com.fourt.railskylines.service.PusherService;
 import com.fourt.railskylines.util.annotation.APIMessage;
 import com.fourt.railskylines.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
@@ -28,9 +29,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class ArticleController {
 
     private final ArticleService articleService;
+    private final PusherService pusherService;
 
-    public ArticleController(ArticleService articleService) {
+    public ArticleController(ArticleService articleService, PusherService pusherService) {
         this.articleService = articleService;
+        this.pusherService = pusherService;
     }
 
     @PostMapping("/articles")
@@ -38,6 +41,10 @@ public class ArticleController {
     public ResponseEntity<Article> hadleCreateNewArticle(@Valid @RequestBody Article newArticle)
             throws IdInvalidException {
         Article article = this.articleService.handleCreateArticle(newArticle);
+
+        // Trigger Pusher event for article creation
+        this.pusherService.triggerArticleCreated(article);
+
         return ResponseEntity.status(HttpStatus.OK).body(article);
     }
 
@@ -49,6 +56,10 @@ public class ArticleController {
             throw new IdInvalidException("Article with id = not exits " + id + " , pls check again");
         }
         Article updateArticle = this.articleService.handleUpdateArticle(id, article);
+
+        // Trigger Pusher event for article update
+        this.pusherService.triggerArticleUpdated(updateArticle);
+
         return ResponseEntity.ok(updateArticle);
     }
 
@@ -60,6 +71,10 @@ public class ArticleController {
             throw new IdInvalidException("Article with id = not exits " + id + " , pls check again");
         }
         this.articleService.handleDeleteArticle(id);
+
+        // Trigger Pusher event for article deletion
+        this.pusherService.triggerArticleDeleted(id);
+
         return ResponseEntity.ok("Delete Success");
     }
 

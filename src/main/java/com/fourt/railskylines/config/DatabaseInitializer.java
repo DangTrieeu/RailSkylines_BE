@@ -204,9 +204,9 @@ public class DatabaseInitializer implements CommandLineRunner {
                 if (countUsers == 0) {
                         // Admin User
                         User adminUser = new User();
-                        adminUser.setEmail("tuyenbest1234@gmail.com");
+                        adminUser.setEmail("vancongtoan09102004@gmail.com");
                         adminUser.setFullName("Super Admin");
-                        adminUser.setPassword(this.passwordEncoder.encode("20102007"));
+                        adminUser.setPassword(this.passwordEncoder.encode("123456"));
                         adminUser.setCreatedAt(Instant.now());
                         adminUser.setCreatedBy("system");
                         adminUser.setStatus(true);
@@ -218,9 +218,9 @@ public class DatabaseInitializer implements CommandLineRunner {
 
                         // Normal User (optional, for testing)
                         User normalUser = new User();
-                        normalUser.setEmail("user@railskylines.com");
+                        normalUser.setEmail("trieuld@gmail.com");
                         normalUser.setFullName("User Normal");
-                        normalUser.setPassword(this.passwordEncoder.encode("20102007"));
+                        normalUser.setPassword(this.passwordEncoder.encode("123456"));
                         normalUser.setCreatedAt(Instant.now());
                         normalUser.setCreatedBy("system");
                         normalUser.setStatus(true);
