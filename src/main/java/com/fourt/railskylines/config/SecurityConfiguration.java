@@ -66,6 +66,7 @@ public class SecurityConfiguration {
                 "/api/v1/vn-pay/**",
                 "/api/v1/callback/**",
                 "/api/v1/seats/**",
+                "/api/v1/chat/**"
         };
 
         http
@@ -75,6 +76,7 @@ public class SecurityConfiguration {
                         authz -> authz
                                 .requestMatchers(whiteList).permitAll()
                                 .requestMatchers("/api/v1/callback/**").permitAll()
+                                .requestMatchers("/api/v1/chat/**").permitAll()
                                 .requestMatchers("/api/v1/vn-pay/**").permitAll()
                                 .requestMatchers("/api/v1/callback/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()

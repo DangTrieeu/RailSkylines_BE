@@ -1,5 +1,12 @@
 package com.fourt.railskylines.domain;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fourt.railskylines.domain.converter.EmbeddingConverter;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,6 +29,11 @@ public class Article {
     private String title;
     private String content;
     private String thumbnail;
+
+    @JsonIgnore
+    @Column(columnDefinition = "longtext")
+    @Convert(converter = EmbeddingConverter.class)
+    private List<Double> embedding;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

@@ -9,16 +9,18 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.fourt.railskylines.domain.Article;
-
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.ArticleRepository;
+import com.fourt.railskylines.service.ai.EmbeddingService;
 
 @Service
 public class ArticleService {
     private final ArticleRepository articleRepository;
+    private final EmbeddingService embeddingService;
 
-    public ArticleService(ArticleRepository articleRepository) {
+    public ArticleService(ArticleRepository articleRepository, EmbeddingService embeddingService) {
         this.articleRepository = articleRepository;
+        this.embeddingService = embeddingService;
     }
 
     public ResultPaginationDTO handleFretchAllArticle(Specification<Article> spec, Pageable pageable) {
@@ -38,7 +40,7 @@ public class ArticleService {
     }
 
     public Article handleCreateArticle(Article article) {
-
+        article.setEmbedding(embeddingService.embedArticle(article));
         return articleRepository.save(article);
     }
 
@@ -56,6 +58,7 @@ public class ArticleService {
             tmpArticle.setTitle(article.getTitle());
             tmpArticle.setContent(article.getContent());
             tmpArticle.setThumbnail(article.getThumbnail());
+            tmpArticle.setEmbedding(embeddingService.embedArticle(tmpArticle));
 
             this.articleRepository.save(tmpArticle);
         }
