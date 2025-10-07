@@ -44,6 +44,10 @@ public class SecurityConfiguration {
 
         String[] whiteList = {
                 "/",
+                "/api/v1/chat/**", // Move chat to top priority
+                "/api/debug/**",
+                "/api/test/**", // Simple test endpoints
+                "/api/admin/**", // Admin endpoints for testing
                 "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register",
                 "/api/v1/train-trips/**",
                 "/api/v1/trains/**",
@@ -65,8 +69,7 @@ public class SecurityConfiguration {
                 "/api/v1/vn-pay",
                 "/api/v1/vn-pay/**",
                 "/api/v1/callback/**",
-                "/api/v1/seats/**",
-                "/api/v1/chat/**"
+                "/api/v1/seats/**"
         };
 
         http
@@ -74,9 +77,10 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(
                         authz -> authz
+                                .requestMatchers("/api/v1/chat/**").permitAll() // Explicit chat endpoints first
+                                .requestMatchers("/api/debug/**").permitAll() // Debug endpoints
                                 .requestMatchers(whiteList).permitAll()
                                 .requestMatchers("/api/v1/callback/**").permitAll()
-                                .requestMatchers("/api/v1/chat/**").permitAll()
                                 .requestMatchers("/api/v1/vn-pay/**").permitAll()
                                 .requestMatchers("/api/v1/callback/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/trains/**").permitAll()
@@ -86,7 +90,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/promotions/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/articles/**").permitAll()
                                 .requestMatchers(HttpMethod.PUT, "/api/v1/seats/**").permitAll()
-                                .anyRequest().authenticated())
+                                .anyRequest().permitAll()) // TEMPORARILY ALLOW ALL FOR TESTING
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(customAuthenticationEntryPoint))

@@ -58,6 +58,7 @@ Before you begin, ensure you have the following installed:
 - **Maven**: Version 3.6+
 - **MySQL/PostgreSQL**: Database server (or use an in-memory DB like H2 for testing)
 - **Git**: For version control
+- **OpenAI API Key**: Required for the AI chatbot and article embedding features
 - IDE (optional): IntelliJ IDEA, Eclipse, or VS Code with Java extensions
 
 ## Setup and Installation
@@ -77,18 +78,46 @@ Before you begin, ensure you have the following installed:
      spring.jpa.hibernate.ddl-auto=update
      ```
 
-3. **Install dependencies**:
+3. **Configure the OpenAI API key for chatbot**:
+   - Create a `.env` file in the project root (it's already in `.gitignore`):
+     ```bash
+     OPENAI_API_KEY=sk-your-actual-openai-api-key-here
+     ```
+   - Or set it as an environment variable before running:
+     ```bash
+     # Linux/Mac/Git Bash
+     export OPENAI_API_KEY="sk-your-actual-openai-api-key-here"
+     
+     # Windows PowerShell
+     $env:OPENAI_API_KEY = "sk-your-actual-openai-api-key-here"
+     
+     # Windows CMD
+     set OPENAI_API_KEY=sk-your-actual-openai-api-key-here
+     ```
+   - The application uses this key for:
+     - Generating article embeddings (for semantic search in the chatbot)
+     - Streaming AI chat responses via OpenAI's GPT models
+
+4. **Install dependencies**:
    Run the following command to download all required Maven dependencies:
    ```bash
-   mvn clean install
+   ./gradlew clean build
    ```
 
 ## Running the Application
 1. **Run the application**:
    ```bash
-   mvn spring-boot:run
+   ./gradlew bootRun
    ```
    The application will start on `http://localhost:8080` by default.
+
+2. **Verify chatbot embedding generation**:
+   - On startup, the application automatically generates embeddings for all articles without embeddings.
+   - Check the logs for messages like:
+     ```
+     Rebuilt embeddings for X article(s).
+     ```
+   - If you see warnings about "OpenAI API key missing", ensure the `OPENAI_API_KEY` environment variable is set.
 
 2. **Access Swagger UI** (if enabled):
    Open your browser and navigate to:

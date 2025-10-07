@@ -38,7 +38,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 	implementation("org.slf4j:slf4j-api:2.0.13")
     // Pusher
-    implementation("com.pusher:pusher-http-java:1.0.0")
+    implementation("com.pusher:pusher-http-java:1.2.1")
 	
 }
 

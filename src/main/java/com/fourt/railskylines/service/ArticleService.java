@@ -2,8 +2,11 @@ package com.fourt.railskylines.service;
 
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,8 @@ import com.fourt.railskylines.service.ai.EmbeddingService;
 
 @Service
 public class ArticleService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArticleService.class);
+
     private final ArticleRepository articleRepository;
     private final EmbeddingService embeddingService;
 
@@ -40,8 +45,17 @@ public class ArticleService {
     }
 
     public Article handleCreateArticle(Article article) {
-        article.setEmbedding(embeddingService.embedArticle(article));
-        return articleRepository.save(article);
+        List<Double> embedding = embeddingService.embedArticle(article);
+        article.setEmbedding(embedding);
+        Article saved = articleRepository.save(article);
+        if (embedding != null && !embedding.isEmpty()) {
+            LOGGER.info("Created article ID {} with embedding vector of size {}", saved.getArticleId(),
+                    embedding.size());
+        } else {
+            LOGGER.warn("Created article ID {} but embedding generation failed or returned empty",
+                    saved.getArticleId());
+        }
+        return saved;
     }
 
     public Article fetchArticleById(long id) {
@@ -58,9 +72,15 @@ public class ArticleService {
             tmpArticle.setTitle(article.getTitle());
             tmpArticle.setContent(article.getContent());
             tmpArticle.setThumbnail(article.getThumbnail());
-            tmpArticle.setEmbedding(embeddingService.embedArticle(tmpArticle));
+            List<Double> embedding = embeddingService.embedArticle(tmpArticle);
+            tmpArticle.setEmbedding(embedding);
 
             this.articleRepository.save(tmpArticle);
+            if (embedding != null && !embedding.isEmpty()) {
+                LOGGER.info("Updated article ID {} with new embedding vector of size {}", id, embedding.size());
+            } else {
+                LOGGER.warn("Updated article ID {} but embedding generation failed or returned empty", id);
+            }
         }
         return tmpArticle;
     }

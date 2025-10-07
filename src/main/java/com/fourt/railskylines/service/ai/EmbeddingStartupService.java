@@ -1,6 +1,5 @@
 package com.fourt.railskylines.service.ai;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -27,23 +26,43 @@ public class EmbeddingStartupService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void rebuildMissingEmbeddings() {
+        LOGGER.info("Checking for articles without embeddings...");
+
         List<Article> articles = articleRepository.findAll();
-        List<Article> toUpdate = new ArrayList<>();
+        int totalArticles = articles.size();
+        int processedCount = 0;
+        int generatedCount = 0;
+
         for (Article article : articles) {
             List<Double> embedding = article.getEmbedding();
             if (embedding == null || embedding.isEmpty()) {
-                List<Double> computed = embeddingService.embedArticle(article);
-                if (!computed.isEmpty()) {
-                    article.setEmbedding(computed);
-                    toUpdate.add(article);
+                try {
+                    // embedArticle now handles saving to database automatically
+                    List<Double> computed = embeddingService.embedArticle(article);
+                    if (!computed.isEmpty()) {
+                        generatedCount++;
+                        LOGGER.debug("Generated embedding for article {} ({})",
+                                article.getArticleId(), article.getTitle());
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to generate embedding for article {}: {}",
+                            article.getArticleId(), e.getMessage());
                 }
             }
+            processedCount++;
+
+            // Log progress for large datasets
+            if (processedCount % 10 == 0 || processedCount == totalArticles) {
+                LOGGER.info("Progress: {}/{} articles processed, {} embeddings generated",
+                        processedCount, totalArticles, generatedCount);
+            }
         }
-        if (!toUpdate.isEmpty()) {
-            articleRepository.saveAll(toUpdate);
-            LOGGER.info("Rebuilt embeddings for {} article(s).", toUpdate.size());
+
+        if (generatedCount > 0) {
+            LOGGER.info("Successfully generated embeddings for {} out of {} articles.",
+                    generatedCount, totalArticles);
         } else {
-            LOGGER.info("All articles already have embeddings.");
+            LOGGER.info("All {} articles already have embeddings.", totalArticles);
         }
     }
 }

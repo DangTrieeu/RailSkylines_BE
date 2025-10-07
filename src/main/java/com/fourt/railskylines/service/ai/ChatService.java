@@ -3,7 +3,7 @@ package com.fourt.railskylines.service.ai;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Comparator;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fourt.railskylines.config.ChatbotProperties;
 import com.fourt.railskylines.config.OpenAIProperties;
 import com.fourt.railskylines.domain.Article;
-import com.fourt.railskylines.repository.ArticleRepository;
+
 import com.fourt.railskylines.service.ai.SemanticRouter.Route;
 import com.fourt.railskylines.service.ai.dto.ChatMessagePayload;
 import com.fourt.railskylines.service.ai.dto.ChatRequestPayload;
@@ -45,24 +45,21 @@ public class ChatService {
 
     private final OpenAIProperties openAIProperties;
     private final ChatbotProperties chatbotProperties;
-    private final ArticleRepository articleRepository;
-    private final EmbeddingService embeddingService;
     private final SemanticRouter semanticRouter;
+    private final VectorSearchService vectorSearchService;
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
 
     public ChatService(
             OpenAIProperties openAIProperties,
             ChatbotProperties chatbotProperties,
-            ArticleRepository articleRepository,
-            EmbeddingService embeddingService,
             SemanticRouter semanticRouter,
+            VectorSearchService vectorSearchService,
             ObjectMapper objectMapper) {
         this.openAIProperties = openAIProperties;
         this.chatbotProperties = chatbotProperties;
-        this.articleRepository = articleRepository;
-        this.embeddingService = embeddingService;
         this.semanticRouter = semanticRouter;
+        this.vectorSearchService = vectorSearchService;
         this.objectMapper = objectMapper;
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(Duration.ofSeconds(15))
@@ -202,44 +199,64 @@ public class ChatService {
         }
     }
 
+    /**
+     * Retrieve relevant articles using vector search, similar to Python version
+     */
     private List<RelevantArticle> retrieveRelevantArticles(Route route, List<ChatMessagePayload> history) {
         if (route != Route.ARTICLE_QA) {
             return List.of();
         }
+
         Optional<ChatMessagePayload> latestUser = history.stream()
                 .filter(ChatMessagePayload::isUser)
                 .reduce((first, second) -> second);
         if (latestUser.isEmpty()) {
             return List.of();
         }
-        List<Double> queryEmbedding = embeddingService.embedText(latestUser.get().content());
-        if (queryEmbedding.isEmpty()) {
-            return List.of();
-        }
 
-        return articleRepository.findByEmbeddingIsNotNull().stream()
-                .filter(article -> article.getEmbedding() != null && !article.getEmbedding().isEmpty())
-                .map(article -> new RelevantArticle(
-                        article,
-                        embeddingService.cosineSimilarity(queryEmbedding, article.getEmbedding()),
-                        buildPreview(article)))
-                .filter(match -> match.score() > 0.1d)
-                .sorted(Comparator.comparingDouble(RelevantArticle::score).reversed())
-                .limit(chatbotProperties.getEmbedding().getMaxSources())
+        String query = latestUser.get().content();
+        int maxSources = chatbotProperties.getEmbedding().getMaxSources();
+        double minScore = -1.0; // Very low threshold to catch mock embeddings
+
+        // Use VectorSearchService for better search logic
+        List<VectorSearchService.VectorSearchResult> searchResults = vectorSearchService.vectorSearch(query, maxSources,
+                minScore);
+
+        // Convert to RelevantArticle format
+        return searchResults.stream()
+                .map(result -> new RelevantArticle(
+                        result.article(),
+                        result.score(),
+                        result.preview()))
                 .collect(Collectors.toList());
     }
 
     private List<Map<String, String>> buildOpenAiMessages(List<ChatMessagePayload> history, Route route,
             List<RelevantArticle> articles) {
         List<Map<String, String>> payload = new ArrayList<>();
+
+        // Add system persona prompt
         payload.add(Map.of(
                 "role", "system",
                 "content", buildPersonaPrompt(route)));
-        if (!articles.isEmpty()) {
-            payload.add(Map.of(
-                    "role", "system",
-                    "content", buildKnowledgePrompt(articles)));
+
+        // For article QA, build a complete context-aware prompt instead of separate
+        // system messages
+        if (!articles.isEmpty() && route == Route.ARTICLE_QA) {
+            // Get the latest user message for context building
+            Optional<ChatMessagePayload> latestUser = history.stream()
+                    .filter(ChatMessagePayload::isUser)
+                    .reduce((first, second) -> second);
+
+            if (latestUser.isPresent()) {
+                String completePrompt = buildCompletePrompt(latestUser.get().content(), articles);
+                payload.add(Map.of(
+                        "role", "system",
+                        "content", completePrompt));
+            }
         }
+
+        // Add conversation history (trimmed)
         List<ChatMessagePayload> trimmed = history.size() > HISTORY_WINDOW
                 ? history.subList(history.size() - HISTORY_WINDOW, history.size())
                 : history;
@@ -249,40 +266,79 @@ public class ChatService {
                     "role", normalizeRole(message.role()),
                     "content", message.content()));
         }
+
         return payload;
     }
 
     private String buildPersonaPrompt(Route route) {
         return switch (route) {
-            case ARTICLE_QA -> """
-                    You are RailSkylines Copilot. Use the provided article knowledge base to craft precise, well-structured responses in Vietnamese when possible. Reference relevant articles naturally and mention if you include an image thumbnail. If you do not have enough context, ask for clarification instead of inventing details.
-                    """;
-            case SUPPORT -> """
-                    You are RailSkylines Copilot helping travellers with bookings, schedules, and support questions. Provide step-by-step guidance and reference official procedures when necessary. Be concise and proactive in Vietnamese unless the user writes in another language.
-                    """;
-            default -> """
-                    You are RailSkylines Copilot. Engage in friendly, concise conversation while remaining helpful. When the user switches topics, follow politely and offer assistance related to RailSkylines when appropriate.
-                    """;
+            case ARTICLE_QA ->
+                """
+                        You are RailSkylines Copilot. Use the provided article knowledge base to craft precise, well-structured responses in Vietnamese when possible. Reference relevant articles naturally and mention if you include an image thumbnail. If you do not have enough context, ask for clarification instead of inventing details.
+                        """;
+            case SUPPORT ->
+                """
+                        You are RailSkylines Copilot helping travellers with bookings, schedules, and support questions. Provide step-by-step guidance and reference official procedures when necessary. Be concise and proactive in Vietnamese unless the user writes in another language.
+                        """;
+            default ->
+                """
+                        You are RailSkylines Copilot. Engage in friendly, concise conversation while remaining helpful. When the user switches topics, follow politely and offer assistance related to RailSkylines when appropriate.
+                        """;
         };
     }
 
+    /**
+     * Build knowledge prompt similar to build_prompt() in Python version
+     * Creates a structured context from search results
+     */
     private String buildKnowledgePrompt(List<RelevantArticle> articles) {
-        StringBuilder builder = new StringBuilder("Here are relevant articles from the knowledge base:\n");
-        for (int index = 0; index < articles.size(); index++) {
-            RelevantArticle article = articles.get(index);
-            builder.append("\nArticle #").append(index + 1).append("\n");
-            builder.append("Title: ").append(Optional.ofNullable(article.article().getTitle()).orElse("Untitled"))
-                    .append("\n");
-            builder.append("Summary: ").append(article.preview()).append("\n");
-            if (StringUtils.hasText(article.article().getThumbnail())) {
-                builder.append("Thumbnail URL: ").append(article.article().getThumbnail()).append("\n");
-            }
-            builder.append("Relevance score: ").append(String.format(Locale.US, "%.2f", article.score())).append("\n");
-            builder.append("Content:\n").append(Optional.ofNullable(article.article().getContent()).orElse("")).append("\n");
+        if (articles.isEmpty()) {
+            return "No relevant articles found in the knowledge base.";
         }
-        builder.append(
-                "\nUse the articles above to ground your answer. If a thumbnail URL is available and helpful, mention it explicitly so the client can display the image.");
-        return builder.toString();
+
+        StringBuilder context = new StringBuilder();
+        context.append("Dựa trên thông tin sau từ cơ sở dữ liệu RailSkylines:\\n\\n");
+
+        for (int i = 0; i < articles.size(); i++) {
+            RelevantArticle article = articles.get(i);
+            String title = Optional.ofNullable(article.article().getTitle()).orElse("Không có tiêu đề");
+            String content = Optional.ofNullable(article.article().getContent()).orElse("Không có nội dung");
+            String thumbnail = article.article().getThumbnail();
+
+            context.append(String.format("#### %d. **%s**\\n", i + 1, title));
+            context.append(String.format("- #### **Thông tin**: %s\\n", content));
+
+            // Add thumbnail/image info if available
+            if (StringUtils.hasText(thumbnail)) {
+                context.append(String.format("- **Hình ảnh**: %s\\n", thumbnail));
+            }
+
+            // Add relevance score for debugging (optional)
+            if (LOGGER.isDebugEnabled()) {
+                context.append(String.format("- **Độ liên quan**: %.2f\\n", article.score()));
+            }
+
+            context.append("\\n");
+        }
+
+        context.append("\\nHãy trả lời thân thiện, rõ ràng dựa trên thông tin trên. ");
+        context.append("Nếu có hình ảnh, hãy đề cập để người dùng có thể xem.");
+
+        return context.toString();
+    }
+
+    /**
+     * Build complete prompt for user query with context, similar to Python version
+     */
+    private String buildCompletePrompt(String userQuery, List<RelevantArticle> articles) {
+        String context = buildKnowledgePrompt(articles);
+
+        return String.format(
+                "Bạn là chuyên gia tư vấn của **RailSkylines**. " +
+                        "**Khách hỏi:** _%s_ " +
+                        "%s",
+                userQuery,
+                context);
     }
 
     private void sendDone(SseEmitter emitter) {
@@ -318,15 +374,6 @@ public class ChatService {
             case "system" -> "system";
             default -> "user";
         };
-    }
-
-    private String buildPreview(Article article) {
-        String content = Optional.ofNullable(article.getContent()).orElse("");
-        content = content.replaceAll("\\s+", " ").trim();
-        if (content.length() > 240) {
-            return content.substring(0, 237) + "...";
-        }
-        return content;
     }
 
     private boolean isClientAbort(IOException exception) {

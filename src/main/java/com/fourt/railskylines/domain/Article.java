@@ -27,6 +27,8 @@ public class Article {
     private long articleId;
 
     private String title;
+
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
     private String thumbnail;
 
