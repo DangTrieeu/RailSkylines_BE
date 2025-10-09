@@ -16,39 +16,45 @@ public class SemanticRouter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SemanticRouter.class);
 
-    // Define sample utterances for each route, similar to Python version
-    private static final List<String> ARTICLE_QA_SAMPLES = List.of(
-            "Cho tôi xem tin tức về tàu hỏa",
-            "Có chương trình khuyến mãi gì không",
-            "Bài viết về lịch trình tàu",
-            "Hình ảnh của ga tàu",
-            "Tin tức mới nhất về RailSkylines",
-            "Thông tin về các tuyến đường mới",
-            "What are the latest news",
-            "Show me articles about trains",
-            "Any promotions available");
-
-    private static final List<String> SUPPORT_SAMPLES = List.of(
-            "Tôi muốn đặt vé tàu",
-            "Làm thế nào để hủy vé",
-            "Lịch trình tàu từ Hà Nội đi Sài Gòn",
-            "Giá vé tàu bao nhiêu",
-            "Tôi cần hỗ trợ đặt vé",
-            "Refund ticket process",
-            "How to book train tickets",
-            "Train schedule information",
-            "Help me with booking");
-
-    private static final List<String> CHITCHAT_SAMPLES = List.of(
+    // Small talk samples - chỉ những câu chào hỏi thông thường
+    private static final List<String> SMALL_TALK_SAMPLES = List.of(
+            // Tiếng Việt
             "Xin chào",
+            "Chào bạn",
+            "Hi",
+            "Hello",
             "Bạn khỏe không",
-            "Cảm ơn bạn",
-            "Tạm biệt",
-            "Hello there",
+            "Bạn có khỏe không",
             "How are you",
+            "Cảm ơn",
+            "Cảm ơn bạn",
             "Thank you",
+            "Thanks",
+            "Tạm biệt",
+            "Bye",
             "Goodbye",
-            "Nice to meet you");
+            "See you",
+            "Hẹn gặp lại",
+            "Chúc ngủ ngon",
+            "Good night",
+            "Chào buổi sáng",
+            "Good morning",
+            "Chào buổi chiều",
+            "Good afternoon",
+            "Bạn tên gì",
+            "What's your name",
+            "Nice to meet you",
+            "Rất vui được gặp bạn",
+            "Hôm nay thế nào",
+            "How's your day",
+            "Thời tiết hôm nay thế nào",
+            "How's the weather",
+            "Bạn là ai",
+            "Who are you",
+            "Bạn có thể giúp gì",
+            "Can you help me",
+            "Bạn làm gì được",
+            "What can you do");
 
     private final EmbeddingService embeddingService;
 
@@ -57,7 +63,8 @@ public class SemanticRouter {
     }
 
     /**
-     * Resolve route using semantic similarity, similar to Python version
+     * Simple routing: nếu là small talk thì return SMALL_TALK, còn lại là
+     * ARTICLE_QA
      */
     public Route resolveRoute(List<ChatMessagePayload> messages) {
         Optional<ChatMessagePayload> latestUser = messages.stream()
@@ -72,44 +79,32 @@ public class SemanticRouter {
             return Route.SMALL_TALK;
         }
 
-        // Get embedding for user query
+        // Thử semantic similarity trước
         List<Double> queryEmbedding = embeddingService.embedText(query);
-        if (queryEmbedding.isEmpty()) {
-            LOGGER.debug("Failed to get embedding for query, falling back to keyword matching");
-            return fallbackKeywordMatching(query);
+        if (!queryEmbedding.isEmpty()) {
+            double smallTalkScore = calculateRouteScore(queryEmbedding, SMALL_TALK_SAMPLES);
+            LOGGER.debug("Query: '{}' -> Small talk score: {:.3f}", query, smallTalkScore);
+
+            // Threshold để xác định small talk
+            if (smallTalkScore > 0.3) {
+                LOGGER.debug("Query: '{}' -> Route: SMALL_TALK (score: {:.3f})", query, smallTalkScore);
+                return Route.SMALL_TALK;
+            }
         }
 
-        // Calculate similarity with each route's sample utterances
-        double bestScore = -1.0;
-        Route bestRoute = Route.SMALL_TALK;
-
-        // Check ARTICLE_QA route
-        double articleScore = calculateRouteScore(queryEmbedding, ARTICLE_QA_SAMPLES);
-        if (articleScore > bestScore) {
-            bestScore = articleScore;
-            bestRoute = Route.ARTICLE_QA;
+        // Fallback keyword matching
+        if (isSmallTalkKeyword(query)) {
+            LOGGER.debug("Query: '{}' -> Route: SMALL_TALK (keyword matching)", query);
+            return Route.SMALL_TALK;
         }
 
-        // Check SUPPORT route
-        double supportScore = calculateRouteScore(queryEmbedding, SUPPORT_SAMPLES);
-        if (supportScore > bestScore) {
-            bestScore = supportScore;
-            bestRoute = Route.SUPPORT;
-        }
-
-        // Check CHITCHAT route
-        double chitchatScore = calculateRouteScore(queryEmbedding, CHITCHAT_SAMPLES);
-        if (chitchatScore > bestScore) {
-            bestScore = chitchatScore;
-            bestRoute = Route.SMALL_TALK;
-        }
-
-        LOGGER.debug("Query: '{}' -> Route: {} (score: {:.3f})", query, bestRoute, bestScore);
-        return bestRoute;
+        // Mặc định là ARTICLE_QA cho tất cả các câu hỏi khác
+        LOGGER.debug("Query: '{}' -> Route: ARTICLE_QA (default)", query);
+        return Route.ARTICLE_QA;
     }
 
     /**
-     * Calculate average similarity score between query and route samples
+     * Calculate average similarity score between query and samples
      */
     private double calculateRouteScore(List<Double> queryEmbedding, List<String> samples) {
         if (samples.isEmpty()) {
@@ -132,33 +127,31 @@ public class SemanticRouter {
     }
 
     /**
-     * Fallback keyword matching when embeddings fail
+     * Fallback keyword matching for small talk
      */
-    private Route fallbackKeywordMatching(String query) {
-        String normalized = query.toLowerCase(Locale.ROOT);
+    private boolean isSmallTalkKeyword(String query) {
+        String normalized = query.toLowerCase(Locale.ROOT).trim();
 
-        // Simple keyword matching as fallback
-        if (normalized.contains("tin tức") || normalized.contains("bài viết") ||
-                normalized.contains("news") || normalized.contains("article") ||
-                normalized.contains("khuyến mãi") || normalized.contains("promotion") ||
-                normalized.contains("camels") || normalized.contains("lạc đà") ||
-                normalized.contains("animals") || normalized.contains("động vật") ||
-                normalized.contains("about") || normalized.contains("tell me")) {
-            return Route.ARTICLE_QA;
-        }
-
-        if (normalized.contains("đặt vé") || normalized.contains("booking") ||
-                normalized.contains("lịch trình") || normalized.contains("schedule") ||
-                normalized.contains("hỗ trợ") || normalized.contains("support")) {
-            return Route.SUPPORT;
-        }
-
-        return Route.SMALL_TALK;
+        // Exact matches hoặc very simple patterns
+        return normalized.equals("hi") ||
+                normalized.equals("hello") ||
+                normalized.equals("xin chào") ||
+                normalized.equals("chào") ||
+                normalized.equals("chào bạn") ||
+                normalized.equals("cảm ơn") ||
+                normalized.equals("thank you") ||
+                normalized.equals("thanks") ||
+                normalized.equals("bye") ||
+                normalized.equals("goodbye") ||
+                normalized.equals("tạm biệt") ||
+                normalized.startsWith("bạn khỏe") ||
+                normalized.startsWith("how are you") ||
+                normalized.startsWith("bạn tên") ||
+                normalized.startsWith("what's your name");
     }
 
     public enum Route {
         ARTICLE_QA,
-        SUPPORT,
         SMALL_TALK;
 
         public String wireValue() {

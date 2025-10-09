@@ -276,10 +276,13 @@ public class ChatService {
                 """
                         You are RailSkylines Copilot. Use the provided article knowledge base to craft precise, well-structured responses in Vietnamese when possible. Reference relevant articles naturally and mention if you include an image thumbnail. If you do not have enough context, ask for clarification instead of inventing details.
                         """;
-            case SUPPORT ->
-                """
-                        You are RailSkylines Copilot helping travellers with bookings, schedules, and support questions. Provide step-by-step guidance and reference official procedures when necessary. Be concise and proactive in Vietnamese unless the user writes in another language.
-                        """;
+            // case SUPPORT ->
+            // """
+            // You are RailSkylines Copilot helping travellers with bookings, schedules, and
+            // support questions. Provide step-by-step guidance and reference official
+            // procedures when necessary. Be concise and proactive in Vietnamese unless the
+            // user writes in another language.
+            // """;
             default ->
                 """
                         You are RailSkylines Copilot. Engage in friendly, concise conversation while remaining helpful. When the user switches topics, follow politely and offer assistance related to RailSkylines when appropriate.
