@@ -34,12 +34,27 @@ public class PromotionController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
+    @GetMapping("/promotions/active")
+    @APIMessage("Fetch All Active Promotions")
+    public ResponseEntity<List<ReqPromotionDTO>> getAllActivePromotions() {
+        List<ReqPromotionDTO> activePromotions = promotionService.getAllActivePromotions();
+        return new ResponseEntity<>(activePromotions, HttpStatus.OK);
+    }
+
+    @GetMapping("/promotions/expired")
+    @APIMessage("Fetch All Expired Promotions")
+    public ResponseEntity<List<ReqPromotionDTO>> getAllExpiredPromotions() {
+        List<ReqPromotionDTO> expiredPromotions = promotionService.getAllExpiredPromotions();
+        return new ResponseEntity<>(expiredPromotions, HttpStatus.OK);
+    }
+
     @GetMapping("/promotions/{id}")
     @APIMessage("Fetch Promotion By ID")
-    public ResponseEntity<ReqPromotionDTO> getPromotionById(@PathVariable("id") Long id) throws IdInvalidException {
+    public ResponseEntity<ReqPromotionDTO> getPromotionById(@PathVariable("id") Long id) throws IdInvalidException{
         if (this.promotionService.getPromotionById(id) == null) {
             throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");
         }
+       
         ReqPromotionDTO promotion = promotionService.getPromotionById(id);
         return new ResponseEntity<>(promotion, HttpStatus.OK);
     }
@@ -53,17 +68,43 @@ public class PromotionController {
 
     @PutMapping("/promotions/{id}")
     @APIMessage("Update Promotion")
-    public ResponseEntity<ReqPromotionDTO> updatePromotion(@PathVariable("id") Long id,
-            @RequestBody ReqPromotionDTO promotionDTO) throws IdInvalidException {
+    public ResponseEntity<ReqPromotionDTO> updatePromotion(@PathVariable("id") Long id, @RequestBody ReqPromotionDTO promotionDTO)throws IdInvalidException {
+        if (this.promotionService.getPromotionById(id) == null) {
+            throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");
+        }
+       
         ReqPromotionDTO updatedPromotion = promotionService.updatePromotion(id, promotionDTO);
         return new ResponseEntity<>(updatedPromotion, HttpStatus.OK);
     }
 
     @DeleteMapping("/promotions/{id}")
     @APIMessage("Delete Promotion")
-    public ResponseEntity<String> deletePromotion(@PathVariable("id") Long id)
-            throws IdInvalidException {
+    public ResponseEntity<Void> deletePromotion(@PathVariable("id") Long id) 
+    throws IdInvalidException{
+        if (this.promotionService.getPromotionById(id) == null) {
+            throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");
+        }
+       
         promotionService.deletePromotion(id);
-        return ResponseEntity.ok("Delete Success");
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PutMapping("/promotions/{id}/status")
+    @APIMessage("Update Promotion Status Manually")
+    public ResponseEntity<ReqPromotionDTO> updatePromotionStatusManually(
+            @PathVariable("id") Long id,
+            @RequestBody ReqPromotionDTO promotionDTO) throws IdInvalidException{
+                if (this.promotionService.getPromotionById(id) == null) {
+                    throw new IdInvalidException("Promotion with id = not exits " + id + " , pls check again");
+                }        
+        ReqPromotionDTO updatedPromotion = promotionService.updatePromotionStatusManually(id, promotionDTO.getStatus());
+        return new ResponseEntity<>(updatedPromotion, HttpStatus.OK);
+    }
+
+    @PostMapping("/promotions/update-status")
+    @APIMessage("Manually Trigger Update All Promotion Statuses")
+    public ResponseEntity<Void> updateAllPromotionStatusesManually() {
+        promotionService.updateAllPromotionStatuses();
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

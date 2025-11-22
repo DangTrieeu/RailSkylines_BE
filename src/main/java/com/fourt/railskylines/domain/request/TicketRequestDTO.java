@@ -13,7 +13,4 @@ public class TicketRequestDTO {
     private String citizenId;
     
     private CustomerObjectEnum customerObject;
-
-    private Long boardingStationId;
-    private Long alightingStationId;
 }

@@ -1,32 +1,17 @@
 package com.fourt.railskylines.controller;
 
-import com.fourt.railskylines.domain.Booking;
-import com.fourt.railskylines.domain.User;
-import com.fourt.railskylines.domain.response.BookingResponseDTO;
-import com.fourt.railskylines.domain.response.ResBookingHistoryDTO;
 import com.fourt.railskylines.domain.response.RestResponse;
-import com.fourt.railskylines.domain.response.ResultPaginationDTO;
+import com.fourt.railskylines.domain.Booking;
 import com.fourt.railskylines.domain.request.BookingRequestDTO;
 import com.fourt.railskylines.service.BookingService;
-import com.fourt.railskylines.util.SecurityUtil;
-import com.turkraft.springfilter.boot.Filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-// import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,32 +32,17 @@ public class BookingController {
     @Transactional
     public ResponseEntity<RestResponse<String>> createBooking(
             @RequestParam("tickets") String ticketsParam,
-            @RequestParam(value = "trainTripId") Long trainTripId,
             @RequestBody @Valid BookingRequestDTO request,
             HttpServletRequest httpServletRequest) throws Exception {
-        if (trainTripId == null) {
-            RestResponse<String> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("trainTripId is required in query parameter");
-            response.setData(null);
-            response.setError("Invalid request");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
-        request.setTrainTripId(trainTripId);
-
+        // Parse tickets từ URL param
         List<Map<String, Object>> tickets = objectMapper.readValue(ticketsParam, List.class);
         List<Long> seatIds = new ArrayList<>();
         for (Map<String, Object> ticket : tickets) {
             Long seatNumber = ((Number) ticket.get("seatNumber")).longValue();
             seatIds.add(seatNumber);
-            Object boardingStationIdObj = ticket.get("boardingStationId");
-            Object alightingStationIdObj = ticket.get("alightingStationId");
-            if (boardingStationIdObj == null || alightingStationIdObj == null) {
-                throw new IllegalArgumentException(
-                        "boardingStationId and alightingStationId must be provided in tickets param");
-            }
         }
 
+        // Kiểm tra thủ công seatIds không rỗng
         if (seatIds == null || seatIds.isEmpty()) {
             RestResponse<String> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());
@@ -85,19 +55,18 @@ public class BookingController {
         request.setSeatIds(seatIds);
         request.setTicketsParam(ticketsParam);
 
+        // Kiểm tra số lượng tickets trong body và seatIds
         if (seatIds.size() != request.getTickets().size()) {
             RestResponse<String> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé ("
-                    + request.getTickets().size() + ")");
+            response.setMessage("Số lượng ghế (" + seatIds.size() + ") không khớp với số lượng vé (" + request.getTickets().size() + ")");
             response.setData(null);
             response.setError("Invalid request");
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        // Kiểm tra contactEmail cho người không đăng ký
-        String email = SecurityUtil.getCurrentUserLogin().orElse(null);
-        if (email == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
+        // Validate thông tin liên hệ
+        if (request.getUserId() == null && (request.getContactEmail() == null || request.getContactEmail().isBlank())) {
             RestResponse<String> response = new RestResponse<>();
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());
             response.setMessage("Contact email is required for non-registered users");
@@ -106,9 +75,18 @@ public class BookingController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
+        // Validate promotionId
+        if (request.getPromotionId() != null) {
+            // Optional: Add additional validation if needed
+        }
+
+        // Tạo booking
         Booking booking = bookingService.createBooking(request, httpServletRequest);
+
+        // Tạo URL thanh toán
         String paymentUrl = bookingService.getPaymentUrl(booking, httpServletRequest);
 
+        // Trả về response
         RestResponse<String> response = new RestResponse<>();
         response.setStatusCode(HttpStatus.OK.value());
         response.setMessage("Booking created successfully");
@@ -119,95 +97,19 @@ public class BookingController {
     }
 
     @GetMapping("/bookings/history")
-    public ResponseEntity<RestResponse<List<ResBookingHistoryDTO>>> getBookingHistory() {
-        String email = SecurityUtil.getCurrentUserLogin()
-                .orElseThrow(() -> new RuntimeException("User not authenticated"));
-
-        try {
-            List<ResBookingHistoryDTO> bookings = bookingService.getBookingHistoryByUser(email);
-            RestResponse<List<ResBookingHistoryDTO>> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("Booking history retrieved successfully");
-            response.setData(bookings);
-            response.setError(null);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            RestResponse<List<ResBookingHistoryDTO>> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage(e.getMessage());
-            response.setData(null);
-            response.setError("Invalid request");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<RestResponse<List<Booking>>> getBookingHistory(HttpServletRequest httpServletRequest) {
+        String username = httpServletRequest.getRemoteUser();
+        if (username == null) {
+            throw new RuntimeException("User not authenticated");
         }
-    }
+        List<Booking> bookings = bookingService.getBookingsByUser(username);
 
-    @GetMapping("/bookings/search")
-    public ResponseEntity<RestResponse<Booking>> searchBooking(
-            @RequestParam("bookingCode") String bookingCode,
-            @RequestParam("vnpTxnRef") String vnpTxnRef) {
-        try {
-            Booking booking = bookingService.findBookingByCodeAndVnpTxnRef(bookingCode, vnpTxnRef);
-            RestResponse<Booking> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("Booking retrieved successfully");
-            response.setData(booking);
-            response.setError(null);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            RestResponse<Booking> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setMessage(e.getMessage());
-            response.setData(null);
-            response.setError("Invalid request");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
-    }
+        RestResponse<List<Booking>> response = new RestResponse<>();
+        response.setStatusCode(HttpStatus.OK.value());
+        response.setMessage("Booking history retrieved successfully");
+        response.setData(bookings);
+        response.setError(null);
 
-    @GetMapping("/bookings")
-    public ResponseEntity<ResultPaginationDTO> getAllBookings(@Filter Specification<Booking> spec,
-            Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-                this.bookingService.getAllBookings(spec, pageable));
-    }
-
-    // @GetMapping("/bookings/{id}")
-    // public ResponseEntity<RestResponse<Booking>>
-    // getBookingById(@PathVariable("id") Long id) {
-    // try {
-    // Booking booking = bookingService.getBookingById(id);
-    // RestResponse<Booking> response = new RestResponse<>();
-    // response.setStatusCode(HttpStatus.OK.value());
-    // response.setMessage("Booking retrieved successfully");
-    // response.setData(booking);
-    // response.setError(null);
-    // return ResponseEntity.ok(response);
-    // } catch (Exception e) {
-    // RestResponse<Booking> response = new RestResponse<>();
-    // response.setStatusCode(HttpStatus.NOT_FOUND.value());
-    // response.setMessage(e.getMessage());
-    // response.setData(null);
-    // response.setError("Booking not found");
-    // return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-    // }
-    // }
-    @GetMapping("/bookings/{bookingId}")
-    public ResponseEntity<RestResponse<BookingResponseDTO>> getBookingById(
-            @PathVariable("bookingId") String bookingId) {
-        try {
-            BookingResponseDTO booking = bookingService.getBookingById(bookingId);
-            RestResponse<BookingResponseDTO> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("Booking retrieved successfully");
-            response.setData(booking);
-            response.setError(null);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            RestResponse<BookingResponseDTO> response = new RestResponse<>();
-            response.setStatusCode(HttpStatus.NOT_FOUND.value());
-            response.setMessage(e.getMessage());
-            response.setData(null);
-            response.setError("Booking not found");
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
+        return ResponseEntity.ok(response);
     }
 }

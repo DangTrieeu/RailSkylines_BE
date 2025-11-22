@@ -3,7 +3,6 @@ package com.fourt.railskylines.domain;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fourt.railskylines.util.constant.CustomerObjectEnum;
 import com.fourt.railskylines.util.constant.TicketStatusEnum;
 
@@ -16,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -60,12 +60,13 @@ public class Ticket {
     @JoinColumn(name = "booking_id")
     private Booking booking;
 
-    @ManyToOne
-    @JoinColumn(name = "seat_id")
+    @OneToOne
+    @JoinColumn(name = "seat_id") // Sửa từ "id" thành "seat_id" để khớp với schema
     private Seat seat;
 
-    private Integer boardingOrder; // Thêm để lưu index của boardingStation
-    private Integer alightingOrder; // Thêm để lưu index của alightingStation
+    @ManyToOne
+    @JoinColumn(name = "train_trip_id")
+    private TrainTrip trainTrip;
 
     @PrePersist
     public void prePersist() {

@@ -11,7 +11,6 @@ import com.fourt.railskylines.util.VNPayUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,13 +46,13 @@ public class PaymentController {
         response.setStatusCode(HttpStatus.OK.value());
         response.setError(null);
         response.setMessage("Success");
-        response.setData(paymentService.createVnPayPayment(request, amount, bankCode,
-                txnRef != null ? txnRef : VNPayUtil.getRandomNumber(8)));
+        response.setData(paymentService.createVnPayPayment(request, amount, bankCode, txnRef != null ? txnRef : VNPayUtil.getRandomNumber(8)));
         return response;
     }
 
+    
     @GetMapping("/callback")
-    public ResponseEntity<Void> payCallbackHandler(HttpServletRequest request) {
+    public RestResponse<PaymentResponse> payCallbackHandler(HttpServletRequest request) {
         // Validate VNPay secure hash
         String vnpSecureHash = request.getParameter("vnp_SecureHash");
         Map<String, String> vnpParams = new HashMap<>();
@@ -65,39 +64,51 @@ public class PaymentController {
         String hashData = VNPayUtil.getPaymentURL(vnpParams, false);
         String calculatedHash = VNPayUtil.hmacSHA512(vnPayConfig.getSecretKey(), hashData);
 
-        String vnpTxnRef = request.getParameter("vnp_TxnRef"); // e.g., C977106C
-        String status = request.getParameter("vnp_ResponseCode");
-        String transactionNo = request.getParameter("vnp_TransactionNo"); // e.g., 14949057
-
         if (!calculatedHash.equals(vnpSecureHash)) {
-            String redirectUrl = "http://localhost:3000/payment?error=InvalidSecureHash";
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header("Location", redirectUrl)
-                    .build();
+            RestResponse<PaymentResponse> response = new RestResponse<>();
+            PaymentResponse paymentResponse = new PaymentResponse();
+            paymentResponse.setSuccess(false);
+            paymentResponse.setMessage("Invalid secure hash");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage("Failed");
+            response.setError("Invalid secure hash");
+            response.setData(paymentResponse);
+            return response;
         }
+
+        String status = request.getParameter("vnp_ResponseCode");
+        String txnRef = request.getParameter("vnp_TxnRef");
+        String transactionNo = request.getParameter("vnp_TransactionNo");
+
+        PaymentResponse paymentResponse = new PaymentResponse();
+        RestResponse<PaymentResponse> response = new RestResponse<>();
 
         boolean success = "00".equals(status);
-        try {
-            // Update booking status
-            bookingService.updateBookingPaymentStatus(vnpTxnRef, success, transactionNo);
+        bookingService.updateBookingPaymentStatus(txnRef, success, transactionNo);
 
-            if (success) {
-                // Redirect to frontend with bookingId (vnpTxnRef)
-                String redirectUrl = "http://localhost:3000/booking-confirmation?bookingId=" + vnpTxnRef;
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .header("Location", redirectUrl)
-                        .build();
-            } else {
-                String redirectUrl = "http://localhost:3000/payment?error=PaymentFailed&responseCode=" + status;
-                return ResponseEntity.status(HttpStatus.FOUND)
-                        .header("Location", redirectUrl)
-                        .build();
-            }
-        } catch (RuntimeException e) {
-            String redirectUrl = "http://localhost:3000/payment?error=BookingUpdateFailed";
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header("Location", redirectUrl)
-                    .build();
+        if (success) {
+            paymentResponse.setSuccess(true);
+            paymentResponse.setTransactionId(transactionNo);
+            paymentResponse.setTxnRef(txnRef);
+            paymentResponse.setMessage("Payment successful. Transaction ID: " + transactionNo +
+                    ", Booking ID: " + txnRef);
+
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("Success");
+            response.setError(null);
+            response.setData(paymentResponse);
+        } else {
+            paymentResponse.setSuccess(false);
+            paymentResponse.setTransactionId(null);
+            paymentResponse.setTxnRef(null);
+            paymentResponse.setMessage("Payment failed. Response Code: " + status);
+
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage("Failed");
+            response.setError("Payment failed");
+            response.setData(paymentResponse);
         }
+
+        return response;
     }
 }

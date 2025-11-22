@@ -11,4 +11,5 @@ public interface StationRepository extends JpaRepository<Station, Long>, JpaSpec
     boolean existsByStationName(String stationName);
 
     Station findByStationName(String stationName);
+
 }

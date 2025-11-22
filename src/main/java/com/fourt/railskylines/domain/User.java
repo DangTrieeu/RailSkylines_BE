@@ -53,21 +53,12 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "role_id", referencedColumnName = "role_id")
     private Role role;
-
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Article> articles;
 
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
-    @JsonIgnore
     private List<Ticket> tickets;
-
-    // verify code
-    private boolean status;
-
-    private Instant codeExpired;
-
-    private String code;
 
     @PrePersist
     public void handleBeforeCreate() {

@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fourt.railskylines.util.constant.PaymentStatusEnum;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -36,7 +36,7 @@ public class Booking {
     @Column(name = "booking_code")
     private String bookingCode;
 
-    private Instant date;   
+    private Instant date;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status")
@@ -67,8 +67,7 @@ public class Booking {
     @Column(name = "contact_phone")
     private String contactPhone;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "booking")
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets;
 
     @ManyToOne

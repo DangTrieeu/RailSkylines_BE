@@ -17,8 +17,12 @@ public class CorsConfig {
 
         // cho phép các URL nào có thể kết nối tới backend
         configuration.setAllowedOrigins(
+<<<<<<< HEAD
                 Arrays.asList("https://railskylines-fe-4.onrender.com", "https://railskylines-fe-5.onrender.com",
                         "https://railskylines-fe-6.onrender.com", "http://localhost:3000"));
+=======
+                Arrays.asList("http://localhost:3000", "http://localhost:4173", "http://localhost:5173"));
+>>>>>>> 7d4cc6489dc9ebcdb7015abfb800f91f72e093cb
 
         // các method nào đc kết nối
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -37,4 +41,9 @@ public class CorsConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> 7d4cc6489dc9ebcdb7015abfb800f91f72e093cb

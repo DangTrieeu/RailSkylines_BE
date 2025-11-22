@@ -4,6 +4,8 @@ import com.fourt.railskylines.domain.Seat;
 import com.fourt.railskylines.domain.response.ResultPaginationDTO;
 import com.fourt.railskylines.repository.CarriageRepository;
 import com.fourt.railskylines.repository.SeatRepository;
+import com.fourt.railskylines.util.constant.SeatStatusEnum;
+import com.fourt.railskylines.util.constant.SeatTypeEnum;
 import com.fourt.railskylines.util.error.IdInvalidException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,7 +13,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -36,6 +37,11 @@ public class SeatService {
         Long carriageId = seat.getCarriage().getCarriageId();
         if (!carriageRepository.existsById(carriageId)) {
             throw new IdInvalidException("Carriage with ID " + carriageId + " does not exist");
+        }
+
+        // Validate seat status
+        if (seat.getSeatStatus() == null) {
+            throw new IdInvalidException("Seat status must be provided");
         }
 
         // Validate seat type
@@ -87,6 +93,9 @@ public class SeatService {
         }
 
         // Update fields
+        if (seat.getSeatStatus() != null) {
+            existingSeat.setSeatStatus(seat.getSeatStatus());
+        }
         if (seat.getSeatType() != null) {
             existingSeat.setSeatType(seat.getSeatType());
         }
@@ -101,8 +110,4 @@ public class SeatService {
     public void handleDeleteSeat(Long id) {
         seatRepository.deleteById(id);
     }
-
-    public List<Seat> findAvailableSeatsForSegment(Long trainTripId, int boardingOrder, int alightingOrder) {
-        return seatRepository.findAvailableSeatsForSegment(trainTripId, boardingOrder, alightingOrder);
-    }
-}
+}   

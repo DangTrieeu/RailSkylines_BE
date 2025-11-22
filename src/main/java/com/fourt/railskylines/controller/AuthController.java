@@ -21,16 +21,13 @@ import jakarta.validation.Valid;
 
 import com.fourt.railskylines.domain.User;
 import com.fourt.railskylines.domain.request.ReqLoginDTO;
-import com.fourt.railskylines.domain.request.ResetPasswordDTO;
 import com.fourt.railskylines.domain.response.ResCreateUserDTO;
 import com.fourt.railskylines.domain.response.ResLoginDTO;
-import com.fourt.railskylines.domain.response.RestResponse;
-import com.fourt.railskylines.domain.response.VerifyCodeDTO;
-import com.fourt.railskylines.domain.response.VerifyEmailDTO;
 import com.fourt.railskylines.service.UserService;
 import com.fourt.railskylines.util.SecurityUtil;
 import com.fourt.railskylines.util.annotation.APIMessage;
 import com.fourt.railskylines.util.error.IdInvalidException;
+
 
 @RestController
 @RequestMapping("/api/v1")
@@ -39,7 +36,7 @@ public class AuthController {
     private final SecurityUtil securityUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-
+    
     @Value("${railskylines.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
@@ -101,7 +98,6 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, resCookies.toString())
                 .body(res);
     }
-
     @GetMapping("/auth/account")
     @APIMessage("fetch account")
     public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
@@ -215,69 +211,7 @@ public class AuthController {
 
         String hashPassword = this.passwordEncoder.encode(postManUser.getPassword());
         postManUser.setPassword(hashPassword);
-
-        User user = this.userService.handleRegisterNewUser(postManUser);
+        User user = this.userService.handleCreateNewUser(postManUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResCreateUserDTO(user));
     }
-
-    @PostMapping("/auth/verify-email")
-    public ResponseEntity<String> verifyEmail(@Valid @RequestBody VerifyEmailDTO verifyEmailDTO)
-            throws IdInvalidException {
-        this.userService.verifyEmail(verifyEmailDTO);
-        return ResponseEntity.ok("Verification code sent");
-    }
-
-    @PostMapping("/auth/verify-code")
-    public ResponseEntity<RestResponse<Object>> verifyCode(@Valid @RequestBody VerifyCodeDTO verifyCodeDTO) {
-        RestResponse<Object> response = new RestResponse<>();
-        try {
-            userService.verifyCode(verifyCodeDTO);
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("Verification successful");
-            return ResponseEntity.ok(response);
-        } catch (IdInvalidException e) {
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setError("Invalid request");
-            response.setMessage(e.getMessage());
-            response.setData(null);
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            response.setError("Server error");
-            response.setMessage("Verification failed");
-            response.setData(null);
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PostMapping("/auth/change-password")
-    public ResponseEntity<RestResponse<Object>> changePassword(@Valid @RequestBody ResetPasswordDTO dto) {
-        RestResponse<Object> response = new RestResponse<>();
-        try {
-            if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
-                response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-                response.setError("Password mismatch");
-                response.setMessage("Mật khẩu xác nhận không khớp");
-                response.setData(null);
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-            userService.resetPassword(dto.getEmail(), dto.getVerificationCode(), dto.getNewPassword());
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("Mật khẩu đã được đặt lại thành công");
-            return ResponseEntity.ok(response);
-        } catch (IdInvalidException e) {
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            response.setError("Invalid request");
-            response.setMessage(e.getMessage());
-            response.setData(null);
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            response.setError("Server error");
-            response.setMessage("Đặt lại mật khẩu thất bại");
-            response.setData(null);
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
 }

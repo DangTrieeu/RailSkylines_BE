@@ -1,8 +1,5 @@
 package com.fourt.railskylines.domain;
 
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fourt.railskylines.util.constant.SeatStatusEnum;
 import com.fourt.railskylines.util.constant.SeatTypeEnum;
 
@@ -14,7 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 import lombok.Getter;
@@ -36,9 +33,8 @@ public class Seat {
 
     private double price;
 
-    @OneToMany(mappedBy = "seat")
-    @JsonIgnore
-    private List<Ticket> tickets;
+    @OneToOne(mappedBy = "seat")
+    private Ticket ticket;
 
     @ManyToOne
     @JoinColumn(name = "carriage_id")
@@ -48,5 +44,7 @@ public class Seat {
     @Column(name = "seat_type")
     private SeatTypeEnum seatType;
 
-
+    @ManyToOne
+    @JoinColumn(name = "train_trip_id")
+    private TrainTrip trainTrip;
 }
